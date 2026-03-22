@@ -23,8 +23,8 @@ public class Electricidad {
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
-    private String zone; // "ES", "FR", etc.
+    @Column(nullable = false, unique = true)
+    private String zona; // "ES", "FR", etc.
 
     @NotNull
     @Column(nullable = false)
@@ -34,5 +34,46 @@ public class Electricidad {
     @Positive
     @Column(nullable = false)
     private Double precioMwh;
+
+    public Electricidad() {
+    }
+
+    public Electricidad(String zona, LocalDateTime fecha, Double precioMwh) {
+        this.zona = zona;
+        this.fecha = fecha;
+        this.precioMwh = precioMwh;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getZona() {
+        return zona;
+    }
+
+    public void setZona(String zona) {
+        this.zona = zona;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
+    }
+
+    public Double getPrecioMwh() {
+        return precioMwh;
+    }
+
+    public void setPrecioMwh(Double precioMwh) {
+        this.precioMwh = precioMwh;
+    }
     
 }

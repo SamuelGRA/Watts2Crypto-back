@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
@@ -19,20 +20,24 @@ public class Criptomoneda {
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
-    private String assetId; // "bitcoin", según coincap
+    @Column(nullable = false, unique = true)
+    private String assetId; // "bitcoin", identificador en coincap (basta con hacer lower sobre el nombre normal)
+
+    @NotNull
+    @Column(nullable = false, unique = true)
+    private String simbolo; // "BTC"
+
+    @NotNull
+    @Column(nullable = false, unique = true)
+    private String nombre; // "Bitcoin", como assetId, pero normalizado
 
     @NotNull
     @Column(nullable = false)
-    private String symbol; // "BTC"
+    private Double precioUsd;
 
-    @NotNull
+    @NotBlank
     @Column(nullable = false)
-    private String name; // "Bitcoin", como assetId, pero normalizado
-
-    @NotNull
-    @Column(nullable = false)
-    private Double priceUsd;
+    private String algoritmo;
 
     @NotNull
     @Column(nullable = false)
@@ -41,12 +46,13 @@ public class Criptomoneda {
     public Criptomoneda() {
     }
 
-    public Criptomoneda(Long id, String assetId, String symbol, String name, Double priceUsd, LocalDateTime timestamp) {
+    public Criptomoneda(Long id, String assetId, String simbolo, String nombre, Double precioUsd, String algoritmo, LocalDateTime timestamp) {
         this.id = id;
         this.assetId = assetId;
-        this.symbol = symbol;
-        this.name = name;
-        this.priceUsd = priceUsd;
+        this.simbolo = simbolo;
+        this.nombre = nombre;
+        this.precioUsd = precioUsd;
+        this.algoritmo = algoritmo;
         this.timestamp = timestamp;
     }
 
@@ -66,28 +72,36 @@ public class Criptomoneda {
         this.assetId = assetId;
     }
 
-    public String getSymbol() {
-        return symbol;
+    public String getSimbolo() {
+        return simbolo;
     }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
+    public void setSimbolo(String simbolo) {
+        this.simbolo = simbolo;
     }
 
-    public String getName() {
-        return name;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
-    public Double getPriceUsd() {
-        return priceUsd;
+    public Double getPrecioUsd() {
+        return precioUsd;
     }
 
-    public void setPriceUsd(Double priceUsd) {
-        this.priceUsd = priceUsd;
+    public void setPrecioUsd(Double precioUsd) {
+        this.precioUsd = precioUsd;
+    }
+
+    public String getAlgoritmo() {
+        return algoritmo;
+    }
+
+    public void setAlgoritmo(String algoritmo) {
+        this.algoritmo = algoritmo;
     }
 
     public LocalDateTime getTimestamp() {

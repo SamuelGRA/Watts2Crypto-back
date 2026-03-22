@@ -39,7 +39,7 @@ public class Pool {
 
     @NotNull
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String nombre;
 
     @NotNull
@@ -74,9 +74,8 @@ public class Pool {
     public Pool(){
     }
 
-    public Pool(Long id, String nombre, Double comision, Set<EsquemaDePago> esquemaDePago,
+    public Pool(String nombre, Double comision, Set<EsquemaDePago> esquemaDePago,
         List<String> regiones, List<String> monedas, List<String> algoritmos) {
-        this.id = id;
         this.nombre = nombre;
         this.comision = comision;
         this.esquemaDePago = esquemaDePago;

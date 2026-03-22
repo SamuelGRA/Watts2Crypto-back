@@ -7,7 +7,6 @@ public class CalculoInputDto {
     private Double consumoW;
     private Double precioKwh;
     private Double comision;
-    private Double costeHardware;
 
 }
 

@@ -20,7 +20,7 @@ public abstract class Hardware {
     private Long id;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String nombre;
 
     @Positive

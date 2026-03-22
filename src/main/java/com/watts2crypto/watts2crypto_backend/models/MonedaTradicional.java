@@ -23,32 +23,30 @@ public class MonedaTradicional {
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
-    private String baseCurrency; // por simbolo
+    @Column(nullable = false, unique = true)
+    private String monedaBase; // por simbolo
 
     @NotNull
     @Column(nullable = false)
-    private String targetCurrency; // por simbolo
+    private String monedaObjetivo; // por simbolo
 
     @NotNull
     @Positive
     @Column(nullable = false)
-    private Double rate; // 1 EUR = X USD
+    private Double tasaCambio; // 1 EUR = X USD
 
     @NotNull
     @Column(nullable = false)
-    private LocalDate date; // "2024-01-15"
+    private LocalDate fecha; // "2024-01-15"
 
     public MonedaTradicional() {
     }
 
-    public MonedaTradicional(Long id, @NotNull String baseCurrency, @NotNull String targetCurrency,
-            @NotNull @Positive Double rate, @NotNull LocalDate date) {
-        this.id = id;
-        this.baseCurrency = baseCurrency;
-        this.targetCurrency = targetCurrency;
-        this.rate = rate;
-        this.date = date;
+    public MonedaTradicional(String monedaBase, String monedaObjetivo, Double tasaCambio, LocalDate fecha) {
+        this.monedaBase = monedaBase;
+        this.monedaObjetivo = monedaObjetivo;
+        this.tasaCambio = tasaCambio;
+        this.fecha = fecha;
     }
 
     public Long getId() {
@@ -59,36 +57,36 @@ public class MonedaTradicional {
         this.id = id;
     }
 
-    public String getBaseCurrency() {
-        return baseCurrency;
+    public String getMonedaBase() {
+        return monedaBase;
     }
 
-    public void setBaseCurrency(String baseCurrency) {
-        this.baseCurrency = baseCurrency;
+    public void setMonedaBase(String monedaBase) {
+        this.monedaBase = monedaBase;
     }
 
-    public String getTargetCurrency() {
-        return targetCurrency;
+    public String getMonedaObjetivo() {
+        return monedaObjetivo;
     }
 
-    public void setTargetCurrency(String targetCurrency) {
-        this.targetCurrency = targetCurrency;
+    public void setMonedaObjetivo(String monedaObjetivo) {
+        this.monedaObjetivo = monedaObjetivo;
     }
 
-    public Double getRate() {
-        return rate;
+    public Double getTasaCambio() {
+        return tasaCambio;
     }
 
-    public void setRate(Double rate) {
-        this.rate = rate;
+    public void setTasaCambio(Double tasaCambio) {
+        this.tasaCambio = tasaCambio;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public LocalDate getFecha() {
+        return fecha;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
     }
-    
+
 }

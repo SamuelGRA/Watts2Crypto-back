@@ -1,5 +1,6 @@
 package com.watts2crypto.watts2crypto_backend.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -11,10 +12,12 @@ public class Cpu extends Hardware {
 
     @NotNull
     @Positive
+    @Column(nullable = false)
     private Double hashrate;
 
     @NotNull
     @Positive
+    @Column(nullable = false)
     private Double consumo; //TDP en TechPowerup
 
     public Cpu() {

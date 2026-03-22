@@ -43,8 +43,5 @@ public class RendimientoAlgoritmo {
     public void setConsumo(Double consumo) {
         this.consumo = consumo;
     }
-
-    public Double getSpeedMHs() {
-        return hashrate == null ? null : hashrate / 1_000_000d;
-    }
+    
 }
