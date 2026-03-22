@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "precios_electricidad", indexes = {
-    @Index(name = "idx_zone_fecha", columnList = "zone, fecha") //Se van a hacer muchas consultas sobre rangos de fecha y zonas
+    @Index(name = "idx_zona_fecha", columnList = "zona, fecha") //Se van a hacer muchas consultas sobre rangos de fecha y zonas
 })
 public class Electricidad {
 

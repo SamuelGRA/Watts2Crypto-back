@@ -1,9 +1,9 @@
 #!/bin/sh
-echo "Compilando proyecto antes del commit..."
-mvn compile -q
+echo "Ejecutando build completa antes del commit..."
+mvn.cmd clean install -q 
 if [ $? -ne 0 ]; then
-  echo "Compilación fallida. Commit cancelado."
+  echo "BUILD FALLIDA. Commit cancelado."
   exit 1
 fi
-echo "Compilación exitosa. Continuando con el commit."
+echo "BUILD EXITOSA. Continuando con el commit."
 exit 0
