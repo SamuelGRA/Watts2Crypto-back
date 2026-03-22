@@ -10,26 +10,24 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+@Entity
+@Table(name = "electricidad_por_pais")
 public class ElectricidadPorPais {
+    //Esta entidad va a proporcionar los precios para los cálculos de rentabilidad, los datos de la entidad Electricidad se van a dejar para
+    //histórico d edatos (formar gráficas y eso).
 
-    @Entity
-    @Table
-    public class CosteElectricidadPais {
-        //Esta entidad va a proporcionar los precios para los cálculos de rentabilidad, los datos de la entidad Electricidad se van a dejar para
-        //histórico d edatos (formar gráficas y eso).
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+    @NotBlank
+    @Column(nullable = false, unique = true)
+    private String pais; 
 
-        @NotBlank
-        @Column(nullable = false, unique = true)
-        private String pais; 
-
-        @NotNull
-        @Positive
-        @Column(nullable = false)
-        private Double precioKwh; // en USD/kWh
-    }
+    @NotNull
+    @Positive
+    @Column(nullable = false)
+    private Double precioKwh; // en USD/kWh
+    
 
 }

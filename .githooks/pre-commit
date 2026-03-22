@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "Compilando proyecto antes del commit..."
+mvn compile -q
+if [ $? -ne 0 ]; then
+  echo "Compilación fallida. Commit cancelado."
+  exit 1
+fi
+echo "Compilación exitosa. Continuando con el commit."
+exit 0
