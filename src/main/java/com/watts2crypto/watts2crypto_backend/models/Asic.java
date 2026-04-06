@@ -26,7 +26,7 @@ public class Asic extends Hardware {
     }
 
     public Asic(String nombre, Integer consumoNominal,
-                Map<String, RendimientoAlgoritmo> algoritmos, String algoritmo) {
+                Map<String, RendimientoAlgoritmo> algoritmos) {
         super(nombre, consumoNominal);
         this.algoritmos = algoritmos;
     }
@@ -43,7 +43,7 @@ public class Asic extends Hardware {
         if (algoritmos == null || algoritmo == null || !algoritmos.containsKey(algoritmo)) {
             return null;
         }
-        return algoritmos.get(algoritmo).gethashrate();
+        return algoritmos.get(algoritmo).getHashrate();
     }
 
     public Double getSpeedGigahashesPorSegundo(String algoritmo) { //ASIC suele ser del orden de GH/s

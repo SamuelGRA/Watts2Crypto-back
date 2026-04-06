@@ -1,6 +1,5 @@
 package com.watts2crypto.watts2crypto_backend.repositories;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,11 +13,10 @@ public interface CriptomonedaRepository extends BaseRepository<Criptomoneda> {
     @Query("SELECT c FROM Criptomoneda c WHERE LOWER(c.nombre) = LOWER(:name)")
     Optional<Criptomoneda> findByNameIgnoreCase(@Param("name") String name);
 
-    @Query("SELECT c.nombre FROM Criptomoneda c")
-    Optional<List<String>> findAllNames();
+    @Query("SELECT c FROM Criptomoneda c WHERE LOWER(c.assetId) = LOWER(:assetId)")
+    Optional<Criptomoneda> findByAssetIdIgnoreCase(@Param("assetId") String assetId);
 
-    @Query("SELECT c FROM Criptomoneda c WHERE c.timestamp BETWEEN :startdate AND :endDate")
-    Optional<List<Criptomoneda>> findAllBetweenTimestamps(@Param("startDate") LocalDateTime startDate, 
-    @Param("endDate") LocalDateTime endDate);
+    @Query("SELECT c.nombre FROM Criptomoneda c")
+    List<String> findAllNames();
 
 }

@@ -1,0 +1,7 @@
+whattomine:
+  api:
+    key: ${WHATTOMINE_KEY:}
+
+coincap:
+  api:
+    key: ${COINCAP_KEY:}

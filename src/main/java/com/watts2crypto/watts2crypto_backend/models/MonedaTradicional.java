@@ -9,13 +9,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "monedas_tradicionales", indexes = {
-    @Index(name = "idx_base_target_date", columnList = "baseCurrency,targetCurrency,date")
-})
+    @Index(name = "idx_base_target_date", columnList = "monedaBase,monedaObjetivo,fecha"),
+}, uniqueConstraints = @UniqueConstraint( //Para evitar filas duplicadas
+        columnNames = {"monedaBase", "monedaObjetivo", "fecha"}))
 public class MonedaTradicional {
 
     @Id
@@ -23,7 +25,7 @@ public class MonedaTradicional {
     private Long id;
 
     @NotNull
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String monedaBase; // por simbolo
 
     @NotNull

@@ -13,8 +13,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Entity
-@Table(name = "precios_electricidad", indexes = {
-    @Index(name = "idx_zona_fecha", columnList = "zona, fecha") //Se van a hacer muchas consultas sobre rangos de fecha y zonas
+@Table(name = "electricidad", indexes = {
+        @Index(name = "idx_zona_fecha", columnList = "zona, fecha") // Se van a hacer muchas consultas sobre rangos de
+                                                                    // fecha y zonas
 })
 public class Electricidad {
 
@@ -23,8 +24,8 @@ public class Electricidad {
     private Long id;
 
     @NotNull
-    @Column(nullable = false, unique = true)
-    private String zona; // "ES", "FR", etc.
+    @Column(nullable = false)
+    private String zona; // Bidding zone
 
     @NotNull
     @Column(nullable = false)
@@ -75,5 +76,5 @@ public class Electricidad {
     public void setPrecioMwh(Double precioMwh) {
         this.precioMwh = precioMwh;
     }
-    
+
 }

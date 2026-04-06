@@ -1,14 +1,17 @@
 package com.watts2crypto.watts2crypto_backend.models;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
@@ -21,7 +24,7 @@ public class Criptomoneda {
 
     @NotNull
     @Column(nullable = false, unique = true)
-    private String assetId; // "bitcoin", identificador en coincap (basta con hacer lower sobre el nombre normal)
+    private String assetId; // "bitcoin", identificador en coincap
 
     @NotNull
     @Column(nullable = false, unique = true)
@@ -31,29 +34,18 @@ public class Criptomoneda {
     @Column(nullable = false, unique = true)
     private String nombre; // "Bitcoin", como assetId, pero normalizado
 
-    @NotNull
-    @Column(nullable = false)
-    private Double precioUsd;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String algoritmo;
-
-    @NotNull
-    @Column(nullable = false)
-    private LocalDateTime timestamp; //En milisegundos, habrá que hacer conversiones de fecha
+    @OneToMany(mappedBy = "criptomoneda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("fecha ASC")
+    private List<CriptomonedaPrecio> historicoPrecios = new ArrayList<>();
 
     public Criptomoneda() {
     }
 
-    public Criptomoneda(Long id, String assetId, String simbolo, String nombre, Double precioUsd, String algoritmo, LocalDateTime timestamp) {
+    public Criptomoneda(Long id, String assetId, String simbolo, String nombre) {
         this.id = id;
         this.assetId = assetId;
         this.simbolo = simbolo;
         this.nombre = nombre;
-        this.precioUsd = precioUsd;
-        this.algoritmo = algoritmo;
-        this.timestamp = timestamp;
     }
 
     public Long getId() {
@@ -88,28 +80,20 @@ public class Criptomoneda {
         this.nombre = nombre;
     }
 
-    public Double getPrecioUsd() {
-        return precioUsd;
+    public List<CriptomonedaPrecio> getHistoricoPrecios() {
+        return historicoPrecios;
     }
 
-    public void setPrecioUsd(Double precioUsd) {
-        this.precioUsd = precioUsd;
+    public void setHistoricoPrecios(List<CriptomonedaPrecio> historicoPrecios) {
+        this.historicoPrecios.clear();
+        for (CriptomonedaPrecio precio : historicoPrecios) {
+            addPrecio(precio);
+        }
     }
 
-    public String getAlgoritmo() {
-        return algoritmo;
-    }
-
-    public void setAlgoritmo(String algoritmo) {
-        this.algoritmo = algoritmo;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void addPrecio(CriptomonedaPrecio precio) {
+        precio.setCriptomoneda(this);
+        this.historicoPrecios.add(precio);
     }
     
 }
