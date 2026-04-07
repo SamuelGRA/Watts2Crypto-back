@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.watts2crypto.watts2crypto_backend.models.Asic;
+import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
 
 public interface AsicRepository extends BaseRepository<Asic> {
 
@@ -15,4 +16,13 @@ public interface AsicRepository extends BaseRepository<Asic> {
 
     @Query("SELECT a.nombre FROM Asic a")
     Optional<List<String>> findAllNames();
+
+    @Query("""
+           SELECT value(raEntry)
+           FROM Asic a
+           JOIN a.algoritmos raEntry
+           WHERE a.nombre = :name
+             AND key(raEntry) = :algorithm
+           """)
+    Optional<RendimientoAlgoritmo> findHashrateAndPowerByAsicAndAlgorithm(@Param("name") String name, @Param("algorithm") String algorithm);
 }

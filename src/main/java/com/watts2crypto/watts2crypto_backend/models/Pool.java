@@ -22,13 +22,13 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "pools")
+@Table(name = "pool")
 public class Pool {
 
     public enum EsquemaDePago {
         PPS, //pay per share
         PPLNS, //pay per last N shares (pago por contribucion reciente)
-        SOLO, //pago solo si se encuentre el bloque
+        SOLO, //pago solo si se encuentra el bloque
         PPS_PLUS, //pps + tarifas de transaccion
         FPPS //pps + otras tarifas
     }
@@ -57,7 +57,7 @@ public class Pool {
     @CollectionTable(name = "pool_regiones", joinColumns = @JoinColumn(name = "pool_id"))
     @Column(name = "region")
     @NotEmpty
-    private List<String> regiones; // "EU", "US", "ASIA", regiones donde se ubican los servidores
+    private List<String> regiones; // "EU", "US", "ASIA", regiones en las que se ubican los servidores
 
     @ElementCollection
     @CollectionTable(name = "pool_monedas", joinColumns = @JoinColumn(name = "pool_id"))

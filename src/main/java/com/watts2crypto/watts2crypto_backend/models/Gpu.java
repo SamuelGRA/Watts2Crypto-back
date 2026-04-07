@@ -43,12 +43,7 @@ public class Gpu extends Hardware {
         if (algoritmos == null || algoritmo == null || !algoritmos.containsKey(algoritmo)) {
             return null;
         }
-        return algoritmos.get(algoritmo).getConsumo();
-    }
-
-    public Double getSpeedMegahashesPorSegundo(String algoritmo) { //GPU suele ser del orden de MH/s
-        Double hashrate = getSpeedHashesPorSegundo(algoritmo);
-        return hashrate == null ? null : hashrate / 1_000_000d;
+        return algoritmos.get(algoritmo).getHashrate();
     }
 
     public Double getConsumoEnWatts(String algoritmo) {

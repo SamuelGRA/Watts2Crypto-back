@@ -13,37 +13,21 @@ public class Cpu extends Hardware {
     @NotNull
     @Positive
     @Column(nullable = false)
-    private Double hashrate;
-
-    @NotNull
-    @Positive
-    @Column(nullable = false)
-    private Double consumo; //TDP en TechPowerup
+    private Integer hashrate;
 
     public Cpu() {
     }
 
-    public Cpu(String nombre, Integer consumoNominal, Double hashrate, Double consumo) {
+    public Cpu(String nombre, Integer consumoNominal, Integer hashrate) {
         super(nombre, consumoNominal);
         this.hashrate = hashrate;
-        this.consumo = consumo;
     }
 
-    public Double getHashrate() {
+    public Integer getHashrate() {
         return hashrate;
     }
 
-    public void setHashrate(Double hashrate) {
+    public void setHashrate(Integer hashrate) {
         this.hashrate = hashrate;
     }
-
-    public Double getConsumo() {
-        return consumo;
-    }
-
-    public void setConsumo(Double consumo) {
-        this.consumo = consumo;
-    }
-    
-
 }

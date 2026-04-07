@@ -12,7 +12,7 @@ public class RendimientoAlgoritmo {
 
     @NotNull
     @Positive
-    @Column(name = "speed_hs", nullable = false)
+    @Column(nullable = false)
     private Double hashrate;
 
     @NotNull
@@ -28,7 +28,7 @@ public class RendimientoAlgoritmo {
         this.consumo = consumo;
     }
 
-    public Double gethashrate() {
+    public Double getHashrate() {
         return hashrate;
     }
 

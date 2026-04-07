@@ -1,7 +1,6 @@
 //Esta entidad representará un software de minería
 package com.watts2crypto.watts2crypto_backend.models;
 
-import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.Column;
@@ -61,8 +60,8 @@ public class Software {
     private Double comision;
     
     @NotEmpty
-    @Column(nullable = false)
-    private List<String> algoritmos;
+    @ElementCollection
+    private Set<String> algoritmos;
 
     @NotEmpty
     @ElementCollection
@@ -70,15 +69,14 @@ public class Software {
     private Set<SistemaOperativo> sistemas;
 
     @NotEmpty
-    @ElementCollection
     @Enumerated(EnumType.STRING)
-    private Set<TipoSoftware> tipoSoftware;
+    private TipoSoftware tipoSoftware;
 
     public Software(){
     }
 
-    public Software(String nombre, Set<HardwareUsable> hardwareUsable, Double comision, List<String> algoritmos,
-            Set<SistemaOperativo> sistemas, Set<TipoSoftware> tipoSoftware) {
+    public Software(String nombre, Set<HardwareUsable> hardwareUsable, Double comision, Set<String> algoritmos,
+            Set<SistemaOperativo> sistemas, TipoSoftware tipoSoftware) {
         this.nombre = nombre;
         this.hardwareUsable = hardwareUsable;
         this.comision = comision;
@@ -119,11 +117,11 @@ public class Software {
         this.comision = comision;
     }
 
-    public List<String> getAlgoritmos() {
+    public Set<String> getAlgoritmos() {
         return algoritmos;
     }
 
-    public void setAlgoritmos(List<String> algoritmos) {
+    public void setAlgoritmos(Set<String> algoritmos) {
         this.algoritmos = algoritmos;
     }
 
@@ -135,11 +133,11 @@ public class Software {
         this.sistemas = sistemas;
     }
 
-    public Set<TipoSoftware> getTipoSoftware() {
+    public TipoSoftware getTipoSoftware() {
         return tipoSoftware;
     }
 
-    public void setTipoSoftware(Set<TipoSoftware> tipoSoftware) {
+    public void setTipoSoftware(TipoSoftware tipoSoftware) {
         this.tipoSoftware = tipoSoftware;
     }
 }
