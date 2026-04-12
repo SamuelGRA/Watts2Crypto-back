@@ -1,5 +1,6 @@
 package com.watts2crypto.watts2crypto_backend.repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
@@ -11,4 +12,15 @@ public interface PoolRepository extends BaseRepository<Pool> {
 
     @Query("SELECT p FROM Pool p WHERE LOWER(p.nombre) = LOWER(:name)")
     Optional<Pool> findByName(@Param("name") String name);
+
+    @Query("SELECT p.nombre FROM Pool p")
+    List<String> findAllNames();
+
+    @Query("""
+            SELECT DISTINCT p.nombre
+            FROM Pool p
+            JOIN p.algoritmos a
+            WHERE LOWER(a) = LOWER(:algoritmo)
+            """)
+    List<String> findNamesByAlgorithm(@Param("algoritmo") String algoritmo);
 }

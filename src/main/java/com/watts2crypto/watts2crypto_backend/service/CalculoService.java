@@ -10,9 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.watts2crypto.watts2crypto_backend.models.Asic;
-import com.watts2crypto.watts2crypto_backend.models.Criptomoneda;
-import com.watts2crypto.watts2crypto_backend.models.CriptomonedaPrecio;
 import com.watts2crypto.watts2crypto_backend.models.Cpu;
+import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoHardwareItemDto;
 import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoInputDto;
 import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoOutputDto;
 import com.watts2crypto.watts2crypto_backend.models.Gpu;
@@ -31,7 +30,6 @@ import com.watts2crypto.watts2crypto_backend.repositories.SoftwareRepository;
 @Service
 public class CalculoService {
 
-    private final CriptomonedaService criptomonedaService;
     private final CpuRepository cpuRepository;
     private final GpuRepository gpuRepository;
     private final AsicRepository asicRepository;
@@ -40,15 +38,13 @@ public class CalculoService {
     private final SoftwareRepository softwareRepository;
     private final MetricasMinadoRepository metricasMinadoRepository;
 
-    public CalculoService(CriptomonedaService criptomonedaService,
-            CpuRepository cpuRepository,
+    public CalculoService(CpuRepository cpuRepository,
             GpuRepository gpuRepository,
             AsicRepository asicRepository,
             ElectricidadPorPaisRepository electricidadPorPaisRepository,
             PoolRepository poolRepository,
             SoftwareRepository softwareRepository,
             MetricasMinadoRepository metricasMinadoRepository) {
-        this.criptomonedaService = criptomonedaService;
         this.cpuRepository = cpuRepository;
         this.gpuRepository = gpuRepository;
         this.asicRepository = asicRepository;
@@ -61,32 +57,48 @@ public class CalculoService {
     public CalculoOutputDto calcularRentabilidad(CalculoInputDto input) {
         try {
             validarInput(input);
+            MetricasMinado coinStats = findMetricasMinado(input);
+            validarCompatibilidadMonedaAlgoritmoYSoftware(input, coinStats);
+            String algoritmo = coinStats.getAlgoritmo();
 
-            double hashrate = resolverHashrate(input);
-            double consumoW = resolverConsumoW(input);
+            double hashrate = resolverHashrate(input, algoritmo);
+            double consumoW = resolverConsumoW(input, algoritmo);
             double precioKwh = resolverPrecioKwh(input);
             double comision = resolverComision(input);
 
-                MetricasMinado coinStats = findMetricasMinado(input);
             double monedasMinadasPorDia = calcularMonedasMinadasDia(
                     hashrate,
                     coinStats.getNethash().doubleValue(),
                     coinStats.getBlockTimeSegundos(),
                     coinStats.getBlockReward());
 
-            Criptomoneda cripto = resolverCriptomoneda(input.getMoneda());
-            double precioEur = obtenerPrecioEurMasReciente(cripto);
+                double precioEur = coinStats.getPrecioActualEur();
+                if (precioEur <= 0.0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "La moneda indicada no tiene un precio actual válido para el cálculo.");
+                }
 
             double ingresoBrutoDiario = monedasMinadasPorDia * precioEur;
             double ingresoNetoDiario = ingresoBrutoDiario * (1.0 - (comision / 100.0));
-
             double costeEnergiaDiario = ((consumoW / 1000.0) * 24.0) * precioKwh;
+
             double beneficioDiario = redondear2(ingresoNetoDiario - costeEnergiaDiario);
             double beneficioMensual = redondear2(beneficioDiario * 30.0);
             double beneficioAnual = redondear2(beneficioDiario * 365.0);
             Double roiDias = calcularRoiDias(input.getCostoInicialHardware(), beneficioDiario);
 
-            return new CalculoOutputDto(beneficioDiario, beneficioMensual, beneficioAnual, roiDias);
+            return new CalculoOutputDto(
+                    beneficioDiario,
+                    beneficioMensual,
+                    beneficioAnual,
+                    roiDias,
+                    redondear2(hashrate),
+                    redondear2(consumoW),
+                    redondear2(precioKwh),
+                    redondear2(comision),
+                    algoritmo);
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -134,6 +146,28 @@ public class CalculoService {
         if (input == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El input del calculo no puede ser null.");
         }
+
+        if (input.getHardwareItems() != null) {
+            for (CalculoHardwareItemDto item : input.getHardwareItems()) {
+                if (item == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Los elementos de hardware no pueden ser nulos.");
+                }
+                if (item.getTipoHardware() == null || item.getTipoHardware().isBlank()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cada elemento de hardware debe indicar tipoHardware.");
+                }
+                if (item.getNombreHardware() == null || item.getNombreHardware().isBlank()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cada elemento de hardware debe indicar nombreHardware.");
+                }
+                if (item.getCantidad() != null && item.getCantidad() <= 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "La cantidad de cada elemento de hardware debe ser mayor que 0.");
+                }
+            }
+        }
+
         if (input.getMoneda() == null || input.getMoneda().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se debe indicar la moneda a minar.");
         }
@@ -142,7 +176,7 @@ public class CalculoService {
         }
         if (input.getHashrate() == null && !hayDatosHardware(input)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Debes indicar el hashrate manualmente o seleccionar hardware.");
+                    "Debes indicar el hashrate manualmente o seleccionar hardware de minería.");
         }
         if (input.getConsumoW() != null && input.getConsumoW() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -150,7 +184,7 @@ public class CalculoService {
         }
         if (input.getConsumoW() == null && !hayDatosHardware(input)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Debes indicar el consumo manualmente o seleccionar hardware.");
+                    "Debes indicar el consumo manualmente o seleccionar hardware de minería.");
         }
         if (input.getPrecioKwh() != null && input.getPrecioKwh() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -158,29 +192,29 @@ public class CalculoService {
         }
         if (input.getPrecioKwh() == null && (input.getPais() == null || input.getPais().isBlank())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Debes indicar el precio de la luz manualmente o seleccionar un pais.");
+                    "Debes indicar el precio de la luz manualmente o seleccionar un país.");
         }
         if (input.getComision() != null && (input.getComision() < 0 || input.getComision() > 100)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La comision debe estar entre 0 y 100.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La comisión debe estar entre 0 y 100.");
         }
         if (input.getCostoInicialHardware() != null && input.getCostoInicialHardware() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El costo inicial de hardware debe ser mayor que 0.");
+                    "El costo inicial de hardware no puede ser negativo.");
         }
     }
 
-    private double resolverHashrate(CalculoInputDto input) {
+    private double resolverHashrate(CalculoInputDto input, String algoritmo) {
         if (input.getHashrate() != null) {
             return input.getHashrate();
         }
-        return obtenerRendimientoDesdeHardware(input).hashrate;
+        return obtenerRendimientoDesdeHardware(input, algoritmo).hashrate;
     }
 
-    private double resolverConsumoW(CalculoInputDto input) {
+    private double resolverConsumoW(CalculoInputDto input, String algoritmo) {
         if (input.getConsumoW() != null) {
             return input.getConsumoW();
         }
-        return obtenerRendimientoDesdeHardware(input).consumoW;
+        return obtenerRendimientoDesdeHardware(input, algoritmo).consumoW;
     }
 
     private double resolverPrecioKwh(CalculoInputDto input) {
@@ -221,17 +255,39 @@ public class CalculoService {
         return comisionTotal;
     }
 
-    private RendimientoHardware obtenerRendimientoDesdeHardware(CalculoInputDto input) {
-        if (!hayDatosHardware(input)) {
+    private RendimientoHardware obtenerRendimientoDesdeHardware(CalculoInputDto input, String algoritmo) {
+        List<CalculoHardwareItemDto> hardwareItems = obtenerHardwareItemsNormalizados(input);
+        if (hardwareItems.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Faltan datos de hardware para resolver hashrate/consumo desde BD.");
         }
 
-        String tipo = input.getTipoHardware().trim().toUpperCase(Locale.ROOT);
-        String nombre = input.getNombreHardware().trim();
+        double hashrateTotal = 0.0;
+        double consumoTotal = 0.0;
+
+        for (CalculoHardwareItemDto item : hardwareItems) {
+            RendimientoHardware rendimientoUnitario = obtenerRendimientoUnitario(item, algoritmo);
+            int cantidad = item.getCantidad() == null ? 1 : item.getCantidad();
+
+            hashrateTotal += rendimientoUnitario.hashrate * cantidad;
+            consumoTotal += rendimientoUnitario.consumoW * cantidad;
+        }
+
+        return new RendimientoHardware(hashrateTotal, consumoTotal);
+    }
+
+    private RendimientoHardware obtenerRendimientoUnitario(CalculoHardwareItemDto item, String algoritmoInput) {
+        String tipo = item.getTipoHardware().trim().toUpperCase(Locale.ROOT);
+        String nombre = item.getNombreHardware().trim();
 
         switch (tipo) {
             case "CPU":
+            String algoritmoCpu = validarYNormalizarAlgoritmo(algoritmoInput);
+            if (!normalizarTextoComparacion(algoritmoCpu).equals(normalizarTextoComparacion("RandomX"))) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Las CPUs solo son compatibles con el algoritmo RandomX, el cual no es el que usa la moneda indicada.");
+            }
+
                 Cpu cpu = cpuRepository.findByNameIgnoreCase(nombre)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "CPU no encontrada en la base de datos."));
@@ -242,25 +298,27 @@ public class CalculoService {
                 return new RendimientoHardware(cpu.getHashrate().doubleValue(), cpu.getConsumoNominal().doubleValue());
 
             case "GPU":
-                String algoritmoGpu = validarYNormalizarAlgoritmo(input.getAlgoritmo());
+                String algoritmoGpu = validarYNormalizarAlgoritmo(algoritmoInput);
                 Gpu gpu = gpuRepository.findByNameIgnoreCase(nombre)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "GPU no encontrada en la base de datos."));
-                Double hashrateGpu = gpu.getSpeedHashesPorSegundo(algoritmoGpu);
-                Double consumoGpu = gpu.getConsumoEnWatts(algoritmoGpu);
+                String algoritmoGpuResuelto = resolverAlgoritmoCompatible(gpu.getAlgorithms(), algoritmoGpu);
+                Double hashrateGpu = algoritmoGpuResuelto == null ? null : gpu.getSpeedHashesPorSegundo(algoritmoGpuResuelto);
+                Integer consumoGpu = algoritmoGpuResuelto == null ? null : gpu.getConsumoEnWatts(algoritmoGpuResuelto);
                 if (hashrateGpu == null || consumoGpu == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "La GPU seleccionada no tiene datos para el algoritmo indicado.");
+                            "La GPU seleccionada no tiene datos para el algoritmo " + algoritmoInput + ".");
                 }
                 return new RendimientoHardware(hashrateGpu, consumoGpu);
 
             case "ASIC":
-                String algoritmoAsic = validarYNormalizarAlgoritmo(input.getAlgoritmo());
+                String algoritmoAsic = validarYNormalizarAlgoritmo(algoritmoInput);
                 Asic asic = asicRepository.findByNameIgnoreCase(nombre)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "ASIC no encontrado en la base de datos."));
-                Double hashrateAsic = asic.getSpeedHashesPorSegundo(algoritmoAsic);
-                Double consumoAsic = asic.getConsumoEnWatts(algoritmoAsic);
+                String algoritmoAsicResuelto = resolverAlgoritmoCompatible(asic.getAlgorithms(), algoritmoAsic);
+                Double hashrateAsic = algoritmoAsicResuelto == null ? null : asic.getSpeedHashesPorSegundo(algoritmoAsicResuelto);
+                Integer consumoAsic = algoritmoAsicResuelto == null ? null : asic.getConsumoEnWatts(algoritmoAsicResuelto);
                 if (hashrateAsic == null || consumoAsic == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "El ASIC seleccionado no tiene datos para el algoritmo indicado.");
@@ -273,6 +331,15 @@ public class CalculoService {
         }
     }
 
+    private List<CalculoHardwareItemDto> obtenerHardwareItemsNormalizados(CalculoInputDto input) {
+        List<CalculoHardwareItemDto> items = input.getHardwareItems();
+        if (items != null && !items.isEmpty()) {
+            return items;
+        }
+
+        return List.of();
+    }
+
     private String validarYNormalizarAlgoritmo(String algoritmo) {
         if (algoritmo == null || algoritmo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -282,10 +349,7 @@ public class CalculoService {
     }
 
     private boolean hayDatosHardware(CalculoInputDto input) {
-        return input.getTipoHardware() != null
-                && !input.getTipoHardware().isBlank()
-                && input.getNombreHardware() != null
-                && !input.getNombreHardware().isBlank();
+        return input.getHardwareItems() != null && !input.getHardwareItems().isEmpty();
     }
 
     private Double calcularRoiDias(Double costoInicialHardware, double beneficioDiario) {
@@ -297,38 +361,122 @@ public class CalculoService {
 
     private MetricasMinado findMetricasMinado(CalculoInputDto input) {
         if (input.getMoneda() != null && !input.getMoneda().isBlank()) {
-            return metricasMinadoRepository.findByNombreMonedaIgnoreCase(input.getMoneda())
+            String monedaInput = input.getMoneda().trim();
+
+            return metricasMinadoRepository.findByNombreMonedaIgnoreCase(monedaInput)
+                    .or(() -> metricasMinadoRepository.findAll().stream()
+                            .filter(mm -> normalizarNombreMoneda(mm.getNombreMoneda())
+                                    .equals(normalizarNombreMoneda(monedaInput)))
+                            .findFirst())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "No se encontraron métricas de minado para la moneda seleccionada."));
+                            "No se encontraron métricas de minado para la moneda indicada."));
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-            "Debes indicar la moneda para obtener métricas de minado.");
+                "Debes indicar la moneda para obtener métricas de minado.");
     }
 
-    private Criptomoneda resolverCriptomoneda(String moneda) {
-        String normalizada = moneda.trim().toLowerCase();
-        try {
-            return criptomonedaService.findCriptomonedaPorAssetId(normalizada);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    private String normalizarNombreMoneda(String valor) {
+        if (valor == null) {
+            return "";
+        }
+        return normalizarTextoComparacion(valor);
+    }
+
+    private void validarCompatibilidadMonedaAlgoritmoYSoftware(CalculoInputDto input, MetricasMinado metricasMoneda) {
+        String algoritmoMoneda = metricasMoneda.getAlgoritmo();
+        if (algoritmoMoneda == null || algoritmoMoneda.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La moneda seleccionada no se puede minar con el algoritmo indicado.");
+        }
+
+            if (input.getPool() != null && !input.getPool().isBlank()) {
+                Pool pool = poolRepository.findByName(input.getPool().trim())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Pool no encontrada en la base de datos."));
+
+                if (pool.getAlgoritmos() == null || pool.getAlgoritmos().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La pool indicada no tiene algoritmos de minado configurados.");
+                }
+
+                String algoritmoMonedaNormalizado = normalizarTextoComparacion(algoritmoMoneda);
+                boolean poolCompatible = pool.getAlgoritmos().stream()
+                    .filter(a -> a != null && !a.isBlank())
+                    .map(this::normalizarTextoComparacion)
+                    .anyMatch(a -> sonAlgoritmosCompatibles(a, algoritmoMonedaNormalizado));
+
+                if (!poolCompatible) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La pool indicada no soporta el algoritmo " + algoritmoMoneda
+                        + ", requerido por la moneda seleccionada.");
+                }
+            }
+
+        if (input.getSoftware() != null && !input.getSoftware().isBlank()) {
+            Software software = softwareRepository.findByName(input.getSoftware().trim())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Software de minado no encontrado en la base de datos."));
+
+            String algoritmoMonedaNormalizado = normalizarTextoComparacion(algoritmoMoneda);
+            boolean softwareCompatible = software.getAlgoritmos().stream()
+                    .filter(a -> a != null && !a.isBlank())
+                    .map(this::normalizarTextoComparacion)
+                    .anyMatch(a -> sonAlgoritmosCompatibles(a, algoritmoMonedaNormalizado));
+
+            if (!softwareCompatible) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El software indicado no soporta el algoritmo " + algoritmoMoneda
+                                + ", requerido por la moneda seleccionada.");
+            }
         }
     }
 
-    private double obtenerPrecioEurMasReciente(Criptomoneda cripto) {
-        List<CriptomonedaPrecio> historico = cripto.getHistoricoPrecios();
-        if (historico == null || historico.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No hay historico disponible para la criptomoneda seleccionada.");
+    private String normalizarTextoComparacion(String valor) {
+        return valor.trim()
+                .toLowerCase(Locale.ROOT)
+                .replace(" ", "")
+                .replace("-", "")
+                .replace("_", "");
+    }
+
+    private String resolverAlgoritmoCompatible(Map<String, RendimientoAlgoritmo> algoritmosDisponibles, String algoritmoSolicitado) {
+        if (algoritmosDisponibles == null || algoritmosDisponibles.isEmpty() || algoritmoSolicitado == null) {
+            return null;
         }
 
-        return historico.stream()
-                .map(CriptomonedaPrecio::getPrecioEur)
-                .filter(p -> p != null)
-                .reduce((first, second) -> second)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "No hay precio disponible para la criptomoneda seleccionada."))
-                .doubleValue();
+        if (algoritmosDisponibles.containsKey(algoritmoSolicitado)) {
+            return algoritmoSolicitado;
+        }
+
+        String solicitadoNormalizado = normalizarTextoComparacion(algoritmoSolicitado);
+        for (String algoritmoDisponible : algoritmosDisponibles.keySet()) {
+            if (algoritmoDisponible == null || algoritmoDisponible.isBlank()) {
+                continue;
+            }
+            String disponibleNormalizado = normalizarTextoComparacion(algoritmoDisponible);
+            if (solicitadoNormalizado.equals(disponibleNormalizado)
+                    || sonAlgoritmosCompatibles(disponibleNormalizado, solicitadoNormalizado)) {
+                return algoritmoDisponible;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean sonAlgoritmosCompatibles(String algoritmoA, String algoritmoB) {
+        return normalizarFamiliaAlgoritmo(algoritmoA).equals(normalizarFamiliaAlgoritmo(algoritmoB));
+    }
+
+    private String normalizarFamiliaAlgoritmo(String algoritmo) {
+        String normalizado = normalizarTextoComparacion(algoritmo);
+        if (normalizado.equals("ethash")
+                || normalizado.equals("etchash")
+                || normalizado.equals("ethash4g")
+                || normalizado.equals("ethashb3")) {
+            return "ethashfamily";
+        }
+        return normalizado;
     }
 
     private double redondear2(double valor) {

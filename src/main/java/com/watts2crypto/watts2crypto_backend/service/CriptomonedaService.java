@@ -37,7 +37,7 @@ public class CriptomonedaService {
     private static final String COINCAP_BASE_URL = "https://rest.coincap.io/v3/assets/";
     private static final List<String> criptomonedasEnBD = List.of(
             "bitcoin",
-            "ethereum",
+            "ethereum-classic",
             "tether",
             "usd-coin",
             "binance-coin",
@@ -64,8 +64,10 @@ public class CriptomonedaService {
         this.key = key;
     }
 
-    @PostConstruct //Cambiar por scheduled, OJO: esta carga depende de las tasas de cambio, con lo cual se tiene que hace forzosamente
-    //después de la carga de monedas tradicionales, para que los valores estén actualizados
+    @PostConstruct // Cambiar por scheduled, OJO: esta carga depende de las tasas de cambio, con lo
+                   // cual se tiene que hace forzosamente
+    // después de la carga de monedas tradicionales, para que los valores estén
+    // actualizados
     public void initCriptomonedas() {
         if (repository.count() > 0) {
             return;
@@ -86,6 +88,8 @@ public class CriptomonedaService {
                 if (criptomoneda != null) {
                     res.add(criptomoneda);
                 }
+            } catch (ResponseStatusException e) {
+                throw e;
             } catch (Exception e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
             }
@@ -111,6 +115,8 @@ public class CriptomonedaService {
             criptomoneda.addPrecio(precioActual);
 
             return criptomoneda;
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -143,6 +149,8 @@ public class CriptomonedaService {
             return res.stream()
                     .sorted(Comparator.comparing(CriptomonedaPrecio::getFecha))
                     .toList();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -275,10 +283,12 @@ public class CriptomonedaService {
     public List<Criptomoneda> findAllCriptomonedas() {
         try {
             List<Criptomoneda> res = repository.findAll();
-            if(res.isEmpty()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron datos de criptomonedas");
             }
             return res;
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -292,6 +302,8 @@ public class CriptomonedaService {
                         "No se pudieron obtener los nombres de las criptomonedas.");
             }
             return res;
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -305,6 +317,8 @@ public class CriptomonedaService {
                         "Criptomoneda " + nombre + " no encontrada.");
             }
             return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -327,8 +341,12 @@ public class CriptomonedaService {
     public List<CriptomonedaPrecio> findByDateRange(String nombre, LocalDate start, LocalDate end) {
         try {
             List<CriptomonedaPrecio> res = precioRepository.findByNombreAndDateRange(nombre, start, end);
-            if(res.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron datos para ese rango de fechas");
+            if(start.isAfter(end)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de inicio no puede ser posterior a la de fin de rango de busqueda");
+            }
+            if (res.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron datos para ese rango de fechas");
             }
             return res;
         } catch (ResponseStatusException e) {

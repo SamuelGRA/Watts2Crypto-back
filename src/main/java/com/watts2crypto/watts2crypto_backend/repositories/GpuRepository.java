@@ -21,8 +21,8 @@ public interface GpuRepository extends BaseRepository<Gpu> {
            SELECT value(raEntry)
            FROM Gpu g
            JOIN g.algoritmos raEntry
-           WHERE g.nombre = :name
-             AND key(raEntry) = :algorithm
+           WHERE LOWER(g.nombre) = LOWER(:name)
+             AND LOWER(key(raEntry)) = LOWER(:algorithm)
            """)
     Optional<RendimientoAlgoritmo> findHashrateAndPowerByGpuAndAlgorithm(@Param("name") String name, @Param("algorithm") String algorithm);
     

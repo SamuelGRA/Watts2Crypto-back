@@ -98,12 +98,14 @@ public class GpuService {
                 Map<String, RendimientoAlgoritmo> algoritmos = new HashMap<>();
                 Double sumaConsumo = 0.0;
                 Integer contadorConsumo = 0;
+                Double sumaHashrate = 0.0;
+                Integer contadorHashrate = 0;
 
                 for (JsonNode algoNode : algosNode) {
                     String algoName = algoNode.get("name").asText();
 
                     Double hashrate = Double.parseDouble(algoNode.get("hashrate").asText());
-                    Double power = algoNode.get("power").asDouble();
+                    Integer power = algoNode.get("power").asInt();
 
                     RendimientoAlgoritmo rendimiento = new RendimientoAlgoritmo();
                     rendimiento.setHashrate(hashrate);
@@ -113,10 +115,13 @@ public class GpuService {
 
                     sumaConsumo += power;
                     contadorConsumo++;
+                    sumaHashrate += hashrate;
+                    contadorHashrate++;
                 }
 
                 Integer consumoNominal = (int) (Math.round(sumaConsumo / contadorConsumo));
-                Gpu gpu = new Gpu(name, consumoNominal, algoritmos);
+                Double hashrateNominal = sumaHashrate / contadorHashrate;
+                Gpu gpu = new Gpu(name, consumoNominal, hashrateNominal, algoritmos);
                 res.add(gpu);
             }
 
@@ -130,10 +135,26 @@ public class GpuService {
     public List<Gpu> findAllGpus() {
         try {
             return repository.findAll();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
+    }
+
+    public Gpu findGpuByName(String nombre) {
+        try {
+            Optional<Gpu> res = repository.findByNameIgnoreCase(nombre);
+            if(!res.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Gpu " + nombre + " no encontrada.");
+            }
+            return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     public List<String> findAllGpuNames() {
@@ -144,6 +165,8 @@ public class GpuService {
                         "No se pudieron obtener los nombres de las tarjetas gráficas.");
             }
             return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -157,6 +180,8 @@ public class GpuService {
                         "No se encontraron resultados con esos parámetros.");
             }
             return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

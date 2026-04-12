@@ -27,6 +27,10 @@ public class MetricasMinado {
     @Column(nullable = false)
     private String nombreMoneda;
 
+    @NotBlank
+    @Column(nullable = false)
+    private String algoritmo;
+
     @NotNull
     @Column(nullable = false)
     private Long nethash;
@@ -41,16 +45,23 @@ public class MetricasMinado {
     @Column(nullable = false)
     private Double blockReward;
 
+    @NotNull
+    @Positive
+    @Column(nullable = false)
+    private Double precioActualEur;
+
     public MetricasMinado() {
     }
 
-    public MetricasMinado(Integer whatToMineCoinId, String nombreMoneda, Long nethash,
-            Double blockTimeSegundos, Double blockReward) {
+    public MetricasMinado(Integer whatToMineCoinId, String nombreMoneda, String algoritmo, Long nethash,
+            Double blockTimeSegundos, Double blockReward, Double precioActualEur) {
         this.whatToMineCoinId = whatToMineCoinId;
         this.nombreMoneda = nombreMoneda;
+        this.algoritmo = algoritmo;
         this.nethash = nethash;
         this.blockTimeSegundos = blockTimeSegundos;
         this.blockReward = blockReward;
+        this.precioActualEur = precioActualEur;
     }
 
     public Long getId() {
@@ -77,6 +88,14 @@ public class MetricasMinado {
         this.nombreMoneda = nombreMoneda;
     }
 
+    public String getAlgoritmo() {
+        return algoritmo;
+    }
+
+    public void setAlgoritmo(String algoritmo) {
+        this.algoritmo = algoritmo;
+    }
+
     public Long getNethash() {
         return nethash;
     }
@@ -99,5 +118,13 @@ public class MetricasMinado {
 
     public void setBlockReward(Double blockReward) {
         this.blockReward = blockReward;
+    }
+
+    public Double getPrecioActualEur() {
+        return precioActualEur;
+    }
+
+    public void setPrecioActualEur(Double precioActualEur) {
+        this.precioActualEur = precioActualEur;
     }
 }

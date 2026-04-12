@@ -9,7 +9,7 @@ import com.watts2crypto.watts2crypto_backend.models.ElectricidadPorPais;
 
 public interface ElectricidadPorPaisRepository extends BaseRepository<ElectricidadPorPais>{
 
-    @Query("SELECT epp.precioKwh FROM ElectricidadPorPais epp WHERE epp.pais = :pais")
+    @Query("SELECT epp.precioKwh FROM ElectricidadPorPais epp WHERE LOWER(epp.pais) = LOWER(:pais)")
     Optional<Double> findPrecioByPais(@Param("pais") String pais);
     
 }
