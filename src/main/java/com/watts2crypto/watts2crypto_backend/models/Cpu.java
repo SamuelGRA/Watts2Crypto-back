@@ -19,7 +19,7 @@ public class Cpu extends Hardware {
     }
 
     public Cpu(String nombre, Integer consumoNominal, Integer hashrate) {
-        super(nombre, consumoNominal);
+        super(nombre, consumoNominal, Double.valueOf(hashrate));
         this.hashrate = hashrate;
     }
 

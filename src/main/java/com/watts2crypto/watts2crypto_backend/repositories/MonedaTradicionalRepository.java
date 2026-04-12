@@ -40,4 +40,6 @@ public interface MonedaTradicionalRepository extends BaseRepository<MonedaTradic
                         @Param("monedaObjetivo") String monedaObjetivo,
                         @Param("fechaInicio") LocalDate fechaInicio, @Param("fechaFin") LocalDate fechaFin);
         
+        @Query("SELECT DISTINCT mt.monedaObjetivo FROM MonedaTradicional mt")
+        public List<String> findAllSymbols();
 }

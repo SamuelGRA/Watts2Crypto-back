@@ -25,9 +25,9 @@ public class Asic extends Hardware {
     public Asic() {
     }
 
-    public Asic(String nombre, Integer consumoNominal,
+    public Asic(String nombre, Integer consumoNominal, Double hashrateNominal,
                 Map<String, RendimientoAlgoritmo> algoritmos) {
-        super(nombre, consumoNominal);
+        super(nombre, consumoNominal, hashrateNominal);
         this.algoritmos = algoritmos;
     }
 
@@ -51,7 +51,7 @@ public class Asic extends Hardware {
         return hashrate == null ? null : hashrate / 1_000_000_000d;
     }
 
-    public Double getConsumoEnWatts(String algoritmo) {
+    public Integer getConsumoEnWatts(String algoritmo) {
         if (algoritmos == null || algoritmo == null || !algoritmos.containsKey(algoritmo)) {
             return null;
         }

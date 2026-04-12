@@ -166,7 +166,7 @@ MERGE INTO software (nombre, comision, tipo_software) KEY(nombre) VALUES
 ('PhoenixMiner',   0.65, 'MINERO'),
 ('SRBMiner-Multi', 0.85, 'MINERO'),
 ('BzMiner',        1.00, 'MINERO'),
-('Rigel Miner',    0.70, 'MINERO'),
+('Rigel Miner',    1.00, 'MINERO'),
 ('cpuminer-opt',   0.00, 'MINERO'),
 ('CGMiner',        0.00, 'MINERO'),
 ('BFGMiner',       0.00, 'MINERO'),
@@ -324,7 +324,7 @@ ON nombre = 'lolMiner';
 MERGE INTO software_algoritmos (software_id, algoritmos)
 KEY(software_id, algoritmos)
 SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('KawPow'), ('RandomX'), ('Autolykos2'), ('Progpow')) AS a(algo)
+JOIN (VALUES ('Ethash'), ('KawPow'), ('Autolykos2'), ('Progpow'), ('Kaspa')) AS a(algo)
 ON nombre = 'TeamRedMiner';
 
 -- NBMiner
@@ -512,15 +512,14 @@ MERGE INTO pool (nombre, comision) KEY(nombre) VALUES
 ('DxPool',       0.50),
 ('SupportXMR',   0.60),
 ('MoneroOcean',  0.00),
-('Litecoinpool', 1.00),
+('Litecoinpool', 2.00),
 ('P2Pool',       0.00),
 ('Binance Pool', 2.50), 
 ('BTC.com',      2.00), 
 ('Poolin',       2.50), 
 ('unMineable',   1.00), 
 ('Prohashing',   1.99), 
-('Mining Pool Hub', 0.90), 
-('Hiveon Pool', 0.00);
+('Mining Pool Hub', 0.90);
 
 -- ============================================================
 -- POOLS - Esquemas de pago
@@ -574,10 +573,6 @@ SELECT id, e FROM pool JOIN (VALUES ('PPS_PLUS'), ('SOLO')) AS t(e) ON nombre = 
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
 SELECT id, 'PPS' FROM pool WHERE nombre IN ('Litecoinpool', 'unMineable');
 
--- solo PPS_PLUS
-MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago) 
-SELECT id, 'PPS_PLUS' FROM pool WHERE nombre = 'Hiveon Pool';
-
 -- ============================================================
 -- POOLS - Regiones
 -- ============================================================
@@ -585,7 +580,7 @@ SELECT id, 'PPS_PLUS' FROM pool WHERE nombre = 'Hiveon Pool';
 -- EU + US + ASIA
 MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
 SELECT id, r FROM pool JOIN (VALUES ('EU'), ('US'), ('ASIA')) AS t(r)
-ON nombre IN ('AntPool', 'F2Pool', 'ViaBTC', 'Braiins Pool', '2Miners', 'Nanopool', 'SpiderPool', 'DxPool', 'P2Pool', 'Binance Pool', 'BTC.com', 'Poolin', 'unMineable', 'Mining Pool Hub', 'Hiveon Pool');
+ON nombre IN ('AntPool', 'F2Pool', 'ViaBTC', 'Braiins Pool', '2Miners', 'Nanopool', 'SpiderPool', 'DxPool', 'P2Pool', 'Binance Pool', 'BTC.com', 'Poolin', 'unMineable', 'Mining Pool Hub');
 
 -- solo US
 MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
@@ -623,7 +618,7 @@ MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
 SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('ETC'), ('XMR'), ('RVN')) AS t(m) ON nombre = '2Miners';
 
 MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('XMR'), ('ETC'), ('ZEC')) AS t(m) ON nombre = 'Nanopool';
+SELECT id, m FROM pool JOIN (VALUES ('XMR'), ('RVN'), ('CFX'), ('ERGO')) AS t(m) ON nombre = 'Nanopool';
 
 MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
 SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('ETH'), ('ETC')) AS t(m) ON nombre = 'SpiderPool';
@@ -658,9 +653,6 @@ SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('LTC'), ('XMR'), ('DOGE')) AS t(m)
 MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
 SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('ETC'), ('XMR'), ('LTC')) AS t(m) ON nombre = 'Mining Pool Hub';
 
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('ETC')) AS t(m) ON nombre = 'Hiveon Pool';
-
 -- ============================================================
 -- POOLS - Algoritmos
 -- ============================================================
@@ -684,7 +676,7 @@ MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
 SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('RandomX'), ('KawPow')) AS t(a) ON nombre = '2Miners';
 
 MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('RandomX'), ('Equihash')) AS t(a) ON nombre = 'Nanopool';
+SELECT id, a FROM pool JOIN (VALUES ('RandomX'), ('KawPow'), ('Octopus'), ('Autolykos2')) AS t(a) ON nombre = 'Nanopool';
 
 MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
 SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Ethash')) AS t(a) ON nombre = 'SpiderPool';
@@ -713,5 +705,3 @@ SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('RandomX'), ('X11'
 MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
 SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('RandomX'), ('Scrypt')) AS t(a) ON nombre = 'Mining Pool Hub';
 
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, 'Ethash' FROM pool WHERE nombre = 'Hiveon Pool';

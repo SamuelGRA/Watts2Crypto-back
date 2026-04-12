@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -18,7 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.watts2crypto.watts2crypto_backend.models.MonedaTradicional;
+import com.watts2crypto.watts2crypto_backend.models.SimbolosISOMonedas;
 import com.watts2crypto.watts2crypto_backend.repositories.MonedaTradicionalRepository;
+import com.watts2crypto.watts2crypto_backend.repositories.SimbolosISOMonedasRepository;
 
 import jakarta.annotation.PostConstruct;
 
@@ -28,24 +32,35 @@ public class MonedaTradicionalService {
     private final List<String> monedasEnBD = List.of("USD", "GBP", "JPY", "CNY", "RUB", "AUD", "CAD", "CHF", "HKD",
             "BRL");
     private final MonedaTradicionalRepository repository;
+    private final SimbolosISOMonedasRepository simbolosRepository;
     private final RestTemplate restTemplate;
 
     private static final String BASE_INTERNA = "EUR";
 
-    public MonedaTradicionalService(MonedaTradicionalRepository repository, RestTemplate restTemplate) {
+    public MonedaTradicionalService(MonedaTradicionalRepository repository, RestTemplate restTemplate, SimbolosISOMonedasRepository simbolosRepository) {
         this.repository = repository;
         this.restTemplate = restTemplate;
+        this.simbolosRepository = simbolosRepository;
     }
 
     @PostConstruct // Sustituir por scheduled, todos los dias a las 18:00 (dos horas despues de que
-                   // se actualice la API)
+                   // se actualice la API), ojo, la tabla de simbolos metela en otro scheduled y
+                   // que se actualice cada mucho tiempo, porque esa información es muy raro que cambie
+                   // tipo que cambie una vez al mes por lo menos
     public void initMonedasTradicionales() {
-        if (repository.count() > 0) {
-            return;
+        if (repository.count() == 0) {
+            List<MonedaTradicional> listaMonedas = cargarMonedasDeFrankfurter();
+            repository.deleteAll();
+            repository.saveAll(listaMonedas);
         }
-        List<MonedaTradicional> listaMonedas = cargarMonedasDeFrankfurter();
-        repository.deleteAll();
-        repository.saveAll(listaMonedas);
+
+        if (simbolosRepository.count() == 0) {
+            List<String> symbolsFromApi = cargarSymbolsDesdeFrankfurter();
+            List<SimbolosISOMonedas> entities = symbolsFromApi.stream()
+                    .map(SimbolosISOMonedas::new)
+                    .toList();
+            simbolosRepository.saveAll(entities);
+        }
     }
 
     private List<MonedaTradicional> cargarMonedasDeFrankfurter() {
@@ -142,6 +157,8 @@ public class MonedaTradicionalService {
 
             return moneda;
 
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -149,15 +166,20 @@ public class MonedaTradicionalService {
 
     // Metodo que obtiene historico directamente de la API para monedas no
     // persistidas en BD, equivalente al metodo anterior, pero para históricos
-    public List<MonedaTradicional> findHistoricoTasaCambioDirecta(String monedaBase, String monedaObjetivo) {
+    public List<MonedaTradicional> findHistoricoTasaCambioDirecta(String monedaBase, String monedaObjetivo,
+            LocalDate fechaInicio, LocalDate fechaFin) {
         try {
-            
-            LocalDate inicio = LocalDate.now(ZoneId.of("Europe/Madrid"));
-            LocalDate fin = inicio.minusYears(1);
+            LocalDate inicio = fechaInicio;
+            LocalDate fin = fechaFin;
+            if (inicio.isAfter(fin)) {
+                LocalDate temp = inicio;
+                inicio = fin;
+                fin = temp;
+            }
 
             String url = String.format(
                     "https://api.frankfurter.dev/v2/rates?from=%s&to=%s&base=%s&quotes=%s",
-                    fin, inicio, monedaBase, monedaObjetivo);
+                    inicio, fin, monedaBase, monedaObjetivo);
 
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
@@ -189,7 +211,9 @@ public class MonedaTradicionalService {
                 res.add(moneda);
             });
 
-            return res;
+            return completarSerieDiaria(res, monedaBase, monedaObjetivo, inicio, fin);
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -197,7 +221,6 @@ public class MonedaTradicionalService {
 
     public Double convertirCantidad(Double cantidad, String monedaOrigen, String monedaDestino) {
         try {
-            LocalDate fecha = LocalDate.now(ZoneId.of("Europe/Madrid"));
             if (monedaOrigen.equals(monedaDestino)) {
                 return cantidad;
             }
@@ -207,7 +230,7 @@ public class MonedaTradicionalService {
             if ("EUR".equals(monedaOrigen)) {
                 cantidadEnEur = cantidad;
             } else {
-                MonedaTradicional tasaOrigenAEur = findTasaCambioPorBaseObjetivoYFecha(monedaOrigen, "EUR", fecha);
+                MonedaTradicional tasaOrigenAEur = findTasaCambioActualPorBaseYObjetivo(monedaOrigen, "EUR");
                 cantidadEnEur = cantidad * tasaOrigenAEur.getTasaCambio();
             }
 
@@ -215,9 +238,11 @@ public class MonedaTradicionalService {
             if ("EUR".equals(monedaDestino)) {
                 return cantidadEnEur;
             } else {
-                MonedaTradicional tasaEurADestino = findTasaCambioPorBaseObjetivoYFecha("EUR", monedaDestino, fecha);
+                MonedaTradicional tasaEurADestino = findTasaCambioActualPorBaseYObjetivo("EUR", monedaDestino);
                 return cantidadEnEur * tasaEurADestino.getTasaCambio();
             }
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -226,14 +251,16 @@ public class MonedaTradicionalService {
     public List<MonedaTradicional> findAllMonedasTradicionales() {
         try {
             return repository.findAll();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public MonedaTradicional findTasaCambioPorBaseObjetivoYFecha(String monedaBase, String monedaObjetivo,
-            LocalDate fecha) {
+    public MonedaTradicional findTasaCambioActualPorBaseYObjetivo(String monedaBase, String monedaObjetivo) {
         try {
+            LocalDate fecha = LocalDate.now(ZoneId.of("Europe/Madrid"));
             Optional<MonedaTradicional> res = repository.findByExactDate( // Primero busca en base de datos
                     monedaBase, monedaObjetivo, fecha);
 
@@ -264,13 +291,104 @@ public class MonedaTradicionalService {
                     monedaBase, monedaObjetivo, fechaInicio, fechaFin);
 
             if (res.isEmpty()) {
-                return findHistoricoTasaCambioDirecta(monedaBase, monedaObjetivo);
+                return findHistoricoTasaCambioDirecta(monedaBase, monedaObjetivo, fechaInicio, fechaFin);
             }
             return res;
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    private List<MonedaTradicional> completarSerieDiaria(List<MonedaTradicional> puntosApi, String monedaBase,
+            String monedaObjetivo, LocalDate inicio, LocalDate fin) {
+        puntosApi.sort((a, b) -> a.getFecha().compareTo(b.getFecha()));
+
+        List<MonedaTradicional> diaria = new ArrayList<>();
+        MonedaTradicional ultimoDisponible = null;
+        int indice = 0;
+
+        for (LocalDate cursor = inicio; !cursor.isAfter(fin); cursor = cursor.plusDays(1)) {
+            while (indice < puntosApi.size() && !puntosApi.get(indice).getFecha().isAfter(cursor)) {
+                ultimoDisponible = puntosApi.get(indice);
+                indice++;
+            }
+
+            MonedaTradicional fuente = ultimoDisponible != null ? ultimoDisponible : puntosApi.get(0);
+
+            MonedaTradicional moneda = new MonedaTradicional();
+            moneda.setMonedaBase(fuente.getMonedaBase() != null ? fuente.getMonedaBase() : monedaBase);
+            moneda.setMonedaObjetivo(fuente.getMonedaObjetivo() != null ? fuente.getMonedaObjetivo() : monedaObjetivo);
+            moneda.setTasaCambio(fuente.getTasaCambio());
+            moneda.setFecha(cursor);
+            diaria.add(moneda);
+        }
+
+        return diaria;
+    }
+
+    public List<String> findAllSymbols() {
+        try {
+            List<String> res = simbolosRepository.findAllSymbols();
+            if (!res.isEmpty()) {
+                return res;
+            }
+
+            List<String> symbolsFromApi = cargarSymbolsDesdeFrankfurter();
+            List<SimbolosISOMonedas> entities = symbolsFromApi.stream()
+                    .map(SimbolosISOMonedas::new)
+                    .toList();
+            simbolosRepository.saveAll(entities);
+
+            return symbolsFromApi;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    private List<String> cargarSymbolsDesdeFrankfurter() {
+        String url = "https://api.frankfurter.dev/v2/currencies";
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                String.class);
+
+        String body = response.getBody();
+        if (body == null || body.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error en la llamada a Frankfurter");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode root = mapper.readTree(body);
+
+            Set<String> symbols = new LinkedHashSet<>();
+            if (root.isObject()) {
+                root.fieldNames().forEachRemaining(symbols::add);
+            } else if (root.isArray()) {
+                for (JsonNode item : root) {
+                    JsonNode iso = item.get("iso_code");
+                    if (iso != null && !iso.asText().isBlank()) {
+                        symbols.add(iso.asText());
+                    }
+                }
+            }
+
+            if (symbols.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron simbolos en Frankfurter.");
+            }
+
+            return new ArrayList<>(symbols);
+        } catch (IOException e) {
+            throw new IllegalStateException("Error parseando simbolos de Frankfurter", e);
         }
     }
 }

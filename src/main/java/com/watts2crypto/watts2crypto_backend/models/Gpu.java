@@ -25,9 +25,9 @@ public class Gpu extends Hardware {
     public Gpu() {
     }
 
-    public Gpu(String nombre, Integer consumoNominal,
+    public Gpu(String nombre, Integer consumoNominal, Double hashrateNominal,
                Map<String, RendimientoAlgoritmo> algorithms) {
-        super(nombre, consumoNominal);
+        super(nombre, consumoNominal, hashrateNominal);
         this.algoritmos = algorithms;
     }
 
@@ -46,7 +46,7 @@ public class Gpu extends Hardware {
         return algoritmos.get(algoritmo).getHashrate();
     }
 
-    public Double getConsumoEnWatts(String algoritmo) {
+    public Integer getConsumoEnWatts(String algoritmo) {
         if (algoritmos == null || algoritmo == null || !algoritmos.containsKey(algoritmo)) {
             return null;
         }

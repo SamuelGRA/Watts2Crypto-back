@@ -1,5 +1,7 @@
 package com.watts2crypto.watts2crypto_backend.models.DTOs;
 
+import java.util.List;
+
 public class CalculoInputDto {
 
     private Double hashrate;
@@ -7,8 +9,7 @@ public class CalculoInputDto {
     private Double consumoW;
     private Double precioKwh;
     private Double comision;
-    private String tipoHardware;
-    private String nombreHardware;
+    private List<CalculoHardwareItemDto> hardwareItems;
     private String algoritmo;
     private String pais;
     private String pool;
@@ -19,15 +20,14 @@ public class CalculoInputDto {
     }
 
     public CalculoInputDto(Double hashrate, String moneda, Double consumoW, Double precioKwh, Double comision,
-            String tipoHardware, String nombreHardware, String algoritmo, String pais, String pool, String software,
+            List<CalculoHardwareItemDto> hardwareItems, String algoritmo, String pais, String pool, String software,
             Double costoInicialHardware) {
         this.hashrate = hashrate;
         this.moneda = moneda;
         this.consumoW = consumoW;
         this.precioKwh = precioKwh;
         this.comision = comision;
-        this.tipoHardware = tipoHardware;
-        this.nombreHardware = nombreHardware;
+        this.hardwareItems = hardwareItems;
         this.algoritmo = algoritmo;
         this.pais = pais;
         this.pool = pool;
@@ -75,20 +75,12 @@ public class CalculoInputDto {
         this.comision = comision;
     }
 
-    public String getTipoHardware() {
-        return tipoHardware;
+    public List<CalculoHardwareItemDto> getHardwareItems() {
+        return hardwareItems;
     }
 
-    public void setTipoHardware(String tipoHardware) {
-        this.tipoHardware = tipoHardware;
-    }
-
-    public String getNombreHardware() {
-        return nombreHardware;
-    }
-
-    public void setNombreHardware(String nombreHardware) {
-        this.nombreHardware = nombreHardware;
+    public void setHardwareItems(List<CalculoHardwareItemDto> hardwareItems) {
+        this.hardwareItems = hardwareItems;
     }
 
     public String getAlgoritmo() {

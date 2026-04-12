@@ -6,6 +6,11 @@ public class CalculoOutputDto {
     private Double beneficioMensual;
     private Double beneficioAnual;
     private Double roiDias;
+    private Double hashrate;
+    private Double consumoW;
+    private Double precioKwh;
+    private Double comision;
+    private String algoritmoUsado;
 
     public CalculoOutputDto() {
     }
@@ -15,6 +20,19 @@ public class CalculoOutputDto {
         this.beneficioMensual = beneficioMensual;
         this.beneficioAnual = beneficioAnual;
         this.roiDias = roiDias;
+    }
+
+    public CalculoOutputDto(Double beneficioDiario, Double beneficioMensual, Double beneficioAnual, Double roiDias,
+            Double hashrate, Double consumoW, Double precioKwh, Double comision, String algoritmoUsado) {
+        this.beneficioDiario = beneficioDiario;
+        this.beneficioMensual = beneficioMensual;
+        this.beneficioAnual = beneficioAnual;
+        this.roiDias = roiDias;
+        this.hashrate = hashrate;
+        this.consumoW = consumoW;
+        this.precioKwh = precioKwh;
+        this.comision = comision;
+        this.algoritmoUsado = algoritmoUsado;
     }
 
     public Double getBeneficioDiario() {
@@ -47,6 +65,46 @@ public class CalculoOutputDto {
 
     public void setRoiDias(Double roiDias) {
         this.roiDias = roiDias;
+    }
+
+    public Double getHashrate() {
+        return hashrate;
+    }
+
+    public void setHashrate(Double hashrate) {
+        this.hashrate = hashrate;
+    }
+
+    public Double getConsumoW() {
+        return consumoW;
+    }
+
+    public void setConsumoW(Double consumoW) {
+        this.consumoW = consumoW;
+    }
+
+    public Double getPrecioKwh() {
+        return precioKwh;
+    }
+
+    public void setPrecioKwh(Double precioKwh) {
+        this.precioKwh = precioKwh;
+    }
+
+    public Double getComision() {
+        return comision;
+    }
+
+    public void setComision(Double comision) {
+        this.comision = comision;
+    }
+
+    public String getAlgoritmoUsado() {
+        return algoritmoUsado;
+    }
+
+    public void setAlgoritmoUsado(String algoritmoUsado) {
+        this.algoritmoUsado = algoritmoUsado;
     }
 
 }

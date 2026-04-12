@@ -23,12 +23,18 @@ public abstract class Hardware {
     private Integer consumoNominal;
     //Consumo general, (media de consumo por algoritmo en GPU y ASIC, valor directo en CPU)
 
+    @Positive
+    @Column
+    private Double hashrateNominal;
+    //Hashrate general, (media por algoritmo en GPU/ASIC, valor directo en CPU)
+
     protected Hardware() {
     }
 
-    protected Hardware(String nombre, Integer consumoNominal) {
+    protected Hardware(String nombre, Integer consumoNominal, Double hashrateNominal) {
         this.nombre = nombre;
         this.consumoNominal = consumoNominal;
+        this.hashrateNominal = hashrateNominal;
     }
 
     public Long getId() {
@@ -53,5 +59,13 @@ public abstract class Hardware {
 
     public void setConsumoNominal(Integer consumoNominal) {
         this.consumoNominal = consumoNominal;
+    }
+
+    public Double getHashrateNominal() {
+        return hashrateNominal;
+    }
+
+    public void setHashrateNominal(Double hashrateNominal) {
+        this.hashrateNominal = hashrateNominal;
     }
 }

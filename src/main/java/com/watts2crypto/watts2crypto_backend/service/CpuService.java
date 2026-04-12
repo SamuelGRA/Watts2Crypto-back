@@ -38,6 +38,8 @@ public class CpuService {
             if (repository.count() == 0) {
                 scrapearHashrateNo();
             }
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -97,6 +99,8 @@ public class CpuService {
     public List<Cpu> findAllCpus() {
         try {
             return repository.findAll();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -111,6 +115,8 @@ public class CpuService {
                         "No se pudieron obtener los nombres de los procesadores.");
             }
             return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -124,6 +130,8 @@ public class CpuService {
                         "Procesador " + name + " no encontrado.");
             }
             return res.get();
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 

@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -83,6 +84,8 @@ public class ElectricidadService {
 			}
 
 			return res;
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
@@ -138,6 +141,8 @@ public class ElectricidadService {
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zona no soportada por la API");
 			}
 			return parsearElectricidadDeEnergyCharts(body, zona);
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
@@ -245,6 +250,20 @@ public class ElectricidadService {
 		return Instant.ofEpochSecond(rawTimestamp);
 	}
 
+	public List<Electricidad> findAll() {
+		try {
+			List<Electricidad> res = repository.findAll();
+			if(res.isEmpty()) {
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron datos de electricidad");
+			}
+			return res;
+		} catch (ResponseStatusException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+	}
+
 	public List<Electricidad> findByDateRangeAndZone(String zona, LocalDateTime start, LocalDateTime end) {
 		try {
 			List<Electricidad> res = repository.findByDateRange(zona, start, end);
@@ -253,6 +272,8 @@ public class ElectricidadService {
 						"No se encontraron resultados para esos parámetros");
 			}
 			return res;
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
@@ -265,6 +286,8 @@ public class ElectricidadService {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Precio no encontrado para la zona y fecha indicadas");
 			}
 			return res.get();
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
@@ -277,6 +300,8 @@ public class ElectricidadService {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hy datos de precios para la zona indicada");
 			}
 			return res.get();
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
@@ -289,6 +314,8 @@ public class ElectricidadService {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron los nombres de las zonas");
 			}
 			return res;
+		} catch (ResponseStatusException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}

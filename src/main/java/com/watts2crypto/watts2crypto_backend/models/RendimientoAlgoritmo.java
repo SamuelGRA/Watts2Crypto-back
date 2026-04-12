@@ -18,12 +18,12 @@ public class RendimientoAlgoritmo {
     @NotNull
     @Positive
     @Column(nullable = false)
-    private Double consumo;
+    private Integer consumo;
 
     public RendimientoAlgoritmo() {
     }
 
-    public RendimientoAlgoritmo(Double hashrate, Double consumo) {
+    public RendimientoAlgoritmo(Double hashrate, Integer consumo) {
         this.hashrate = hashrate;
         this.consumo = consumo;
     }
@@ -36,11 +36,11 @@ public class RendimientoAlgoritmo {
         this.hashrate = hashrate;
     }
 
-    public Double getConsumo() {
+    public Integer getConsumo() {
         return consumo;
     }
 
-    public void setConsumo(Double consumo) {
+    public void setConsumo(Integer consumo) {
         this.consumo = consumo;
     }
     
