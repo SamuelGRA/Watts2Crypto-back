@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -55,7 +54,7 @@ public class ElectricidadService {
 		this.restTemplate = restTemplate;
 	}
 
-	@PostConstruct
+	@PostConstruct //Cambiar por shceduled
 	public void initElectricidad() {
 		if (repository.count() > 0) {
 			return;
@@ -132,20 +131,33 @@ public class ElectricidadService {
 
 	public List<Electricidad> findElectricidadDirectaPorZona(String zona) {
 		try {
-			String body = llamarApiEnergyCharts(zona);
+			String zonaNormalizada = normalizarZonaSoportada(zona);
+			String body = llamarApiEnergyCharts(zonaNormalizada);
 			if (body == null || body.isBlank()) {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND,
 						"No se encontraron datos para la zona indicada");
 			}
-			if(!zonasSoportadas.contains(zona)) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zona no soportada por la API");
-			}
-			return parsearElectricidadDeEnergyCharts(body, zona);
+			return parsearElectricidadDeEnergyCharts(body, zonaNormalizada);
 		} catch (ResponseStatusException e) {
 			throw e;
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
+	}
+
+	private String normalizarZonaSoportada(String zona) {
+		if (zona == null || zona.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zona no soportada por la API");
+		}
+
+		String limpia = zona.trim();
+		for (String zonaSoportada : zonasSoportadas) {
+			if (zonaSoportada.equalsIgnoreCase(limpia)) {
+				return zonaSoportada;
+			}
+		}
+
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zona no soportada por la API");
 	}
 
 	private List<Electricidad> parsearElectricidadDeEnergyCharts(String body, String zona) {
@@ -313,6 +325,19 @@ public class ElectricidadService {
 			if (res.isEmpty()) {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron los nombres de las zonas");
 			}
+			return res;
+		} catch (ResponseStatusException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+	}
+
+	public List<String> findZonesForDirectSearch() {
+		try {
+			List<String> res = new ArrayList<>(zonasSoportadas);
+			List<String> zonasPersistidas = findAllZones();
+			res.removeAll(zonasPersistidas);
 			return res;
 		} catch (ResponseStatusException e) {
 			throw e;

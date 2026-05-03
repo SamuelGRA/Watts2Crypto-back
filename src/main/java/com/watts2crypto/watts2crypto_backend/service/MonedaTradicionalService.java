@@ -46,7 +46,7 @@ public class MonedaTradicionalService {
     @PostConstruct // Sustituir por scheduled, todos los dias a las 18:00 (dos horas despues de que
                    // se actualice la API), ojo, la tabla de simbolos metela en otro scheduled y
                    // que se actualice cada mucho tiempo, porque esa información es muy raro que cambie
-                   // tipo que cambie una vez al mes por lo menos
+                   // tipo que se actualice una vez al mes por lo menos
     public void initMonedasTradicionales() {
         if (repository.count() == 0) {
             List<MonedaTradicional> listaMonedas = cargarMonedasDeFrankfurter();

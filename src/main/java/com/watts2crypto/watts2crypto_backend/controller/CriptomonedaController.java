@@ -34,6 +34,11 @@ public class CriptomonedaController {
         return service.findAllNames();
     }
 
+    @GetMapping("/simbolos")
+    public List<String> getAllSymbols() {
+        return service.findAllSymbols();
+    }
+
     @GetMapping("/{nombre}")
     public Criptomoneda getByName(@PathVariable String nombre) {
         return service.findCriptomonedaByName(nombre);
@@ -50,6 +55,11 @@ public class CriptomonedaController {
             @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
         return service.findByDateRange(nombre, start, end);
+    }
+
+    @GetMapping("/{nombre}/direct/history")
+    public List<CriptomonedaPrecio> getDirectByDateRange(@PathVariable String nombre) {
+        return service.findHistoricoDirectoPorSimbolo(nombre);
     }
 
 }

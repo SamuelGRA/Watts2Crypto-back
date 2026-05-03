@@ -12,12 +12,12 @@ public interface CriptomonedaPrecioRepository extends BaseRepository<Criptomoned
 
     @Query("""
             SELECT p FROM CriptomonedaPrecio p
-            WHERE LOWER(p.criptomoneda.nombre) = LOWER(:nombre)
+            WHERE LOWER(p.criptomoneda.simbolo) = LOWER(:simbolo)
               AND p.fecha BETWEEN :startDate AND :endDate
             ORDER BY p.fecha ASC
             """)
     List<CriptomonedaPrecio> findByNombreAndDateRange(
-            @Param("nombre") String nombre,
+            @Param("simbolo") String simbolo,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 

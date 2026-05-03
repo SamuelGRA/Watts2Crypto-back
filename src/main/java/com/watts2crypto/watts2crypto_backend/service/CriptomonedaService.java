@@ -35,17 +35,9 @@ public class CriptomonedaService {
 
     private static final ZoneId ZONA_HORARIA = ZoneId.of("Europe/Madrid");
     private static final String COINCAP_BASE_URL = "https://rest.coincap.io/v3/assets/";
-    private static final List<String> criptomonedasEnBD = List.of(
-            "bitcoin",
-            "ethereum-classic",
-            "tether",
-            "usd-coin",
-            "binance-coin",
-            "xrp",
-            "solana",
-            "dogecoin",
-            "cardano",
-            "tron");
+    private static final List<String> criptomonedasEnBD = List.of("bitcoin", "ethereum-classic",
+            "tether", "usd-coin", "binance-coin", "xrp", "solana", "dogecoin", "cardano", "tron", "steth",
+            "hyperliquid", "monero", "chainlink", "zcash", "litecoin");
 
     private final CriptomonedaRepository repository;
     private final CriptomonedaPrecioRepository precioRepository;
@@ -73,29 +65,71 @@ public class CriptomonedaService {
             return;
         }
 
-        List<Criptomoneda> criptomonedas = cargarCriptomonedasDeCoinCap();
-        precioRepository.deleteAll();
+        // Carga metadatos de todas las monedas disponibles
+        List<Criptomoneda> metadatos = cargarMetadatosDeCoinCap();
         repository.deleteAll();
-        repository.saveAll(criptomonedas);
-    }
+        repository.saveAll(metadatos);
 
-    private List<Criptomoneda> cargarCriptomonedasDeCoinCap() {
-        List<Criptomoneda> res = new ArrayList<>();
-
+        // Carga histórico solamente de las monedas que se persisten
+        precioRepository.deleteAll();
         for (String assetId : criptomonedasEnBD) {
             try {
-                Criptomoneda criptomoneda = construirCriptoConHistorico(assetId);
-                if (criptomoneda != null) {
-                    res.add(criptomoneda);
+                Optional<Criptomoneda> persisted = repository.findByAssetIdIgnoreCase(assetId);
+                if (persisted.isPresent()) {
+                    cargarHistoricoParaAsset(assetId, persisted.get());
                 }
-            } catch (ResponseStatusException e) {
-                throw e;
             } catch (Exception e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+                continue;
             }
         }
+    }
 
+    private List<Criptomoneda> cargarMetadatosDeCoinCap() {
+        List<Criptomoneda> res = new ArrayList<>();
+        try {
+            JsonNode root = llamarApiMetadatos();
+            JsonNode data = root.path("data");
+
+            if (!data.isArray() || data.isEmpty()) {
+                return res;
+            }
+
+            for (JsonNode asset : data) {
+                try {
+                    Criptomoneda c = construirCriptomonedaDesdeAsset(asset);
+                    res.add(c);
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
         return res;
+    }
+
+    private void cargarHistoricoParaAsset(String assetId, Criptomoneda persisted) {
+        try {
+            JsonNode root = llamarApiHistorico(assetId);
+            JsonNode data = root.path("data");
+            if (!data.isArray() || data.isEmpty()) {
+                return;
+            }
+
+            List<CriptomonedaPrecio> precios = new ArrayList<>();
+            for (JsonNode item : data) {
+                CriptomonedaPrecio precio = construirPrecioDesdeHistorico(item, persisted);
+                if (precio != null) {
+                    precios.add(precio);
+                }
+            }
+
+            if (!precios.isEmpty()) {
+                precioRepository.saveAll(precios);
+            }
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     public Criptomoneda findCriptomonedaDirectaPorAssetId(String assetId) {
@@ -122,8 +156,9 @@ public class CriptomonedaService {
         }
     }
 
-    public List<CriptomonedaPrecio> findHistoricoDirectoPorAssetId(String assetId) {
+    public List<CriptomonedaPrecio> findHistoricoDirectoPorSimbolo(String simbolo) {
         try {
+            String assetId = repository.findAssetIdBySymbol(simbolo);
             JsonNode asset = llamarApiAsset(assetId).path("data");
             if (asset.isMissingNode() || asset.isNull()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -156,28 +191,6 @@ public class CriptomonedaService {
         }
     }
 
-    private Criptomoneda construirCriptoConHistorico(String assetId) throws IOException {
-        JsonNode asset = llamarApiAsset(assetId).path("data");
-        if (asset.isMissingNode() || asset.isNull()) {
-            return null;
-        }
-
-        Criptomoneda criptomoneda = construirCriptomonedaDesdeAsset(asset);
-        JsonNode historico = llamarApiHistorico(assetId).path("data");
-        if (!historico.isArray() || historico.isEmpty()) {
-            return criptomoneda;
-        }
-
-        for (JsonNode item : historico) {
-            CriptomonedaPrecio precio = construirPrecioDesdeHistorico(item, criptomoneda);
-            if (precio != null) {
-                criptomoneda.addPrecio(precio);
-            }
-        }
-
-        return criptomoneda;
-    }
-
     private JsonNode llamarApiAsset(String assetId) throws IOException {
 
         HttpHeaders headers = new HttpHeaders();
@@ -188,6 +201,30 @@ public class CriptomonedaService {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         ResponseEntity<String> response = restTemplate.exchange(
                 COINCAP_BASE_URL + assetId.toLowerCase(),
+                HttpMethod.GET,
+                entity,
+                String.class);
+
+        String body = response.getBody();
+        if (body == null || body.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error en la llamada a CoinCap");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(body);
+    }
+
+    private JsonNode llamarApiMetadatos() throws IOException {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", "application/json");
+        headers.set("User-Agent", "Mozilla/5.0");
+        headers.set("Authorization", "Bearer " + key);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(
+                COINCAP_BASE_URL,
                 HttpMethod.GET,
                 entity,
                 String.class);
@@ -309,6 +346,21 @@ public class CriptomonedaService {
         }
     }
 
+    public List<String> findAllSymbols() {
+        try {
+            List<String> res = repository.findAllSymbols();
+            if (res.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se pudieron obtener los símbolos de las criptomonedas.");
+            }
+            return res;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
     public Criptomoneda findCriptomonedaByName(String nombre) {
         try {
             Optional<Criptomoneda> res = repository.findByNameIgnoreCase(nombre);
@@ -338,11 +390,12 @@ public class CriptomonedaService {
         }
     }
 
-    public List<CriptomonedaPrecio> findByDateRange(String nombre, LocalDate start, LocalDate end) {
+    public List<CriptomonedaPrecio> findByDateRange(String simbolo, LocalDate start, LocalDate end) {
         try {
-            List<CriptomonedaPrecio> res = precioRepository.findByNombreAndDateRange(nombre, start, end);
-            if(start.isAfter(end)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de inicio no puede ser posterior a la de fin de rango de busqueda");
+            List<CriptomonedaPrecio> res = precioRepository.findByNombreAndDateRange(simbolo, start, end);
+            if (start.isAfter(end)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "La fecha de inicio no puede ser posterior a la de fin de rango de busqueda");
             }
             if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,

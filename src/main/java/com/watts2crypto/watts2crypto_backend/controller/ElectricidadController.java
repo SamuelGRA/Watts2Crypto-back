@@ -56,4 +56,9 @@ public class ElectricidadController {
     public List<String> getAllZoneNames() {
         return service.findAllZones();
     }
+
+    @GetMapping("/zonasDirecta")
+    public List<String> findAllZonesForDirectSearch() {
+        return service.findZonesForDirectSearch();
+    }
 }
