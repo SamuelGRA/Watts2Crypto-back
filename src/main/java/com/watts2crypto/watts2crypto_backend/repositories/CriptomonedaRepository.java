@@ -30,4 +30,9 @@ public interface CriptomonedaRepository extends BaseRepository<Criptomoneda> {
             """)
     Optional<BigDecimal> findLatestPriceByAssetId(@Param("assetId") String assetId);
 
+    @Query("SELECT c.simbolo FROM Criptomoneda c")
+    List<String> findAllSymbols();
+
+    @Query("SELECT c.assetId FROM Criptomoneda c WHERE LOWER(c.simbolo) = LOWER(:simbolo)")
+    String findAssetIdBySymbol(@Param("simbolo") String simbolo);
 }

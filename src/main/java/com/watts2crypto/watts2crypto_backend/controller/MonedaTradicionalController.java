@@ -48,4 +48,11 @@ public class MonedaTradicionalController {
         return service.findHistoricoPorBaseObjetivoYRangoFechas(monedaBase, monedaObjetivo, start, end);
     }
 
+    @GetMapping("/convertirCantidad/{cantidad}")
+    public Double convertirCantidad(@PathVariable Double cantidad, @RequestParam String monedaOrigen,
+        @RequestParam String monedaObjetivo
+    ) {
+        return service.convertirCantidad(cantidad, monedaOrigen, monedaObjetivo);
+    }
+
 }
