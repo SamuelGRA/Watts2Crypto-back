@@ -27,7 +27,18 @@ public class ElectricidadPorPais {
     @NotNull
     @Positive
     @Column(nullable = false)
-    private Double precioKwh; // en USD/kWh
-    
+    private Double precioKwh; // en €/kWh
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getPais() {
+        return pais;
+    }
+
+    public Double getPrecioKwh() {
+        return precioKwh;
+    }
 
 }

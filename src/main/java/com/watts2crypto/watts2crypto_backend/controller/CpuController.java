@@ -34,4 +34,9 @@ public class CpuController {
     public List<String> getAllCpuNames() {
         return service.findAllCpuNames();
     }
+
+    @GetMapping("/byAlgoritmo/{algoritmo}")
+    public List<String> getCpusByAlgorithm(@PathVariable String algoritmo) {
+        return service.findNamesByAlgorithm(algoritmo);
+    }
 }

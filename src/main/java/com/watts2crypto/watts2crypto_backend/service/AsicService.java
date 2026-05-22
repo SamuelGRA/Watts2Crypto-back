@@ -185,4 +185,25 @@ public class AsicService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
+
+    public List<String> findNamesByAlgorithm(String algoritmo) {
+        try {
+            if (algoritmo == null || algoritmo.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El algoritmo no puede estar vacío.");
+            }
+            
+            List<String> compatible = repository.findNamesByAlgorithm(algoritmo.trim());
+
+            if (compatible.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron ASICs compatibles con el algoritmo: " + algoritmo);
+            }
+            return compatible;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
 }

@@ -15,6 +15,7 @@ import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoHardwareItemDto;
 import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoInputDto;
 import com.watts2crypto.watts2crypto_backend.models.DTOs.CalculoOutputDto;
 import com.watts2crypto.watts2crypto_backend.models.Gpu;
+import com.watts2crypto.watts2crypto_backend.models.ElectricidadPorPais;
 import com.watts2crypto.watts2crypto_backend.models.Pool;
 import com.watts2crypto.watts2crypto_backend.models.MetricasMinado;
 import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
@@ -26,6 +27,8 @@ import com.watts2crypto.watts2crypto_backend.repositories.GpuRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.MetricasMinadoRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.PoolRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.SoftwareRepository;
+import com.watts2crypto.watts2crypto_backend.repositories.PoolMonedaComisionRepository;
+import com.watts2crypto.watts2crypto_backend.repositories.SoftwareAlgoritmoMonedaRepository;
 
 @Service
 public class CalculoService {
@@ -37,6 +40,8 @@ public class CalculoService {
     private final PoolRepository poolRepository;
     private final SoftwareRepository softwareRepository;
     private final MetricasMinadoRepository metricasMinadoRepository;
+    private final SoftwareAlgoritmoMonedaRepository softwareAlgoritmoMonedaRepository;
+    private final PoolMonedaComisionRepository poolMonedaComisionRepository;
 
     public CalculoService(CpuRepository cpuRepository,
             GpuRepository gpuRepository,
@@ -44,7 +49,9 @@ public class CalculoService {
             ElectricidadPorPaisRepository electricidadPorPaisRepository,
             PoolRepository poolRepository,
             SoftwareRepository softwareRepository,
-            MetricasMinadoRepository metricasMinadoRepository) {
+            MetricasMinadoRepository metricasMinadoRepository,
+            SoftwareAlgoritmoMonedaRepository softwareAlgoritmoMonedaRepository,
+            PoolMonedaComisionRepository poolMonedaComisionRepository) {
         this.cpuRepository = cpuRepository;
         this.gpuRepository = gpuRepository;
         this.asicRepository = asicRepository;
@@ -52,6 +59,8 @@ public class CalculoService {
         this.poolRepository = poolRepository;
         this.softwareRepository = softwareRepository;
         this.metricasMinadoRepository = metricasMinadoRepository;
+        this.softwareAlgoritmoMonedaRepository = softwareAlgoritmoMonedaRepository;
+        this.poolMonedaComisionRepository = poolMonedaComisionRepository;
     }
 
     public CalculoOutputDto calcularRentabilidad(CalculoInputDto input) {
@@ -89,6 +98,7 @@ public class CalculoService {
 
             return new CalculoOutputDto(
                     beneficioDiario,
+                    redondear2(ingresoBrutoDiario),
                     beneficioMensual,
                     beneficioAnual,
                     roiDias,
@@ -96,12 +106,17 @@ public class CalculoService {
                     redondear2(consumoW),
                     redondear2(precioKwh),
                     redondear2(comision),
+                    redondear2(costeEnergiaDiario),
                     algoritmo);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    public List<ElectricidadPorPais> findPaisesElectricidad() {
+        return electricidadPorPaisRepository.findAllPaises();
     }
 
     public List<String> findAlgoritmosSoportadosPorHardware(String tipoHardware, String nombreHardware) {
@@ -233,18 +248,25 @@ public class CalculoService {
             return input.getComision();
         }
 
+        String moneda = input.getMoneda().trim();
         double comisionTotal = 0.0;
         if (input.getPool() != null && !input.getPool().isBlank()) {
             Pool pool = poolRepository.findByName(input.getPool().trim())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Pool no encontrada en la base de datos."));
-            comisionTotal += pool.getComision();
+            comisionTotal += poolMonedaComisionRepository
+                .findComisionByPoolIdAndMoneda(pool.getId(), moneda)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La pool seleccionada no da soporte para la moneda " + moneda + "."));
         }
         if (input.getSoftware() != null && !input.getSoftware().isBlank()) {
             Software software = softwareRepository.findByName(input.getSoftware().trim())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Software de minado no encontrado en la base de datos."));
-            comisionTotal += software.getComision();
+            comisionTotal += softwareAlgoritmoMonedaRepository
+                .findComisionBySoftwareIdAndMoneda(software.getId(), moneda)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El software seleccionado no da soporte para la moneda " + moneda + "."));
         }
 
         if (comisionTotal > 100.0) {
@@ -385,44 +407,44 @@ public class CalculoService {
 
     private void validarCompatibilidadMonedaAlgoritmoYSoftware(CalculoInputDto input, MetricasMinado metricasMoneda) {
         String algoritmoMoneda = metricasMoneda.getAlgoritmo();
+        String moneda = input.getMoneda().trim();
         if (algoritmoMoneda == null || algoritmoMoneda.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La moneda seleccionada no se puede minar con el algoritmo indicado.");
         }
 
-            if (input.getPool() != null && !input.getPool().isBlank()) {
-                Pool pool = poolRepository.findByName(input.getPool().trim())
+        if (input.getPool() != null && !input.getPool().isBlank()) {
+            Pool pool = poolRepository.findByName(input.getPool().trim())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Pool no encontrada en la base de datos."));
+                            "Pool no encontrada en la base de datos."));
 
-                if (pool.getAlgoritmos() == null || pool.getAlgoritmos().isEmpty()) {
+            boolean poolCompatible = poolMonedaComisionRepository
+                    .findByPoolIdAndMoneda(pool.getId(), moneda)
+                    .isPresent();
+
+            if (!poolCompatible) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La pool indicada no tiene algoritmos de minado configurados.");
-                }
-
-                String algoritmoMonedaNormalizado = normalizarTextoComparacion(algoritmoMoneda);
-                boolean poolCompatible = pool.getAlgoritmos().stream()
-                    .filter(a -> a != null && !a.isBlank())
-                    .map(this::normalizarTextoComparacion)
-                    .anyMatch(a -> sonAlgoritmosCompatibles(a, algoritmoMonedaNormalizado));
-
-                if (!poolCompatible) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La pool indicada no soporta el algoritmo " + algoritmoMoneda
-                        + ", requerido por la moneda seleccionada.");
-                }
+                        "La pool indicada no tiene soporte para la moneda seleccionada (" + moneda + ").");
             }
+        }
 
         if (input.getSoftware() != null && !input.getSoftware().isBlank()) {
             Software software = softwareRepository.findByName(input.getSoftware().trim())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Software de minado no encontrado en la base de datos."));
 
+            var detalleSoftware = softwareAlgoritmoMonedaRepository
+                    .findBySoftwareIdAndMoneda(software.getId(), moneda)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "El software indicado no tiene soporte para la moneda seleccionada (" + moneda + ")."));
+
             String algoritmoMonedaNormalizado = normalizarTextoComparacion(algoritmoMoneda);
-            boolean softwareCompatible = software.getAlgoritmos().stream()
-                    .filter(a -> a != null && !a.isBlank())
-                    .map(this::normalizarTextoComparacion)
-                    .anyMatch(a -> sonAlgoritmosCompatibles(a, algoritmoMonedaNormalizado));
+            String algoritmoSoftware = detalleSoftware.getAlgoritmo();
+            boolean softwareCompatible = algoritmoSoftware != null
+                    && !algoritmoSoftware.isBlank()
+                    && sonAlgoritmosCompatibles(
+                            normalizarTextoComparacion(algoritmoSoftware),
+                            algoritmoMonedaNormalizado);
 
             if (!softwareCompatible) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

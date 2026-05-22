@@ -41,4 +41,7 @@ public class GpuController {
 																		@PathVariable String algoritmo) {
 		return service.findHashrateYConsumoPorNombreYAlgoritmo(nombre, algoritmo);
 	}
-}
+	@GetMapping("/byAlgoritmo/{algoritmo}")
+	public List<String> getGpusByAlgorithm(@PathVariable String algoritmo) {
+		return service.findNamesByAlgorithm(algoritmo);
+	}}

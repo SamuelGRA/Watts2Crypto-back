@@ -1,12 +1,13 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -19,6 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.watts2crypto.watts2crypto_backend.models.Criptomoneda;
+import com.watts2crypto.watts2crypto_backend.models.DTOs.MonedaAlgoritmosDto;
 import com.watts2crypto.watts2crypto_backend.models.MetricasMinado;
 import com.watts2crypto.watts2crypto_backend.repositories.CriptomonedaRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.MetricasMinadoRepository;
@@ -26,22 +29,22 @@ import com.watts2crypto.watts2crypto_backend.repositories.MetricasMinadoReposito
 import jakarta.annotation.PostConstruct;
 
 @Service
+@DependsOn("criptomonedaService") //MetricasMinado depende de datos de Criptomonedas
 public class MetricasMinadoService {
 
     private static final String WHATTOMINE_COINS_URL = "https://whattomine.com/api/v1/coins";
+    private static final String BITCOIN_ASSET_ID = "bitcoin";
 
     private final MetricasMinadoRepository repository;
-    private final MonedaTradicionalService monedaTradicionalService;
     private final CriptomonedaRepository criptomonedaRepository;
-    private final RestTemplate restTemplate;    
+    private final RestTemplate restTemplate;
     private final String key;
     
     
-    public MetricasMinadoService(MetricasMinadoRepository repository, MonedaTradicionalService monedaTradicionalService,
+    public MetricasMinadoService(MetricasMinadoRepository repository,
             CriptomonedaRepository criptomonedaRepository, RestTemplate restTemplate,
             @Value("${whattomine.api.key}") String key) {
         this.repository = repository;
-        this.monedaTradicionalService = monedaTradicionalService;
         this.criptomonedaRepository = criptomonedaRepository;
         this.restTemplate = restTemplate;
         this.key = key;
@@ -49,26 +52,10 @@ public class MetricasMinadoService {
 
     @PostConstruct // Sustituir por scheduled
     public void initMetricasMinado() {
-        if (repository.count() > 0) {
-            return;
-        }
-        List<MetricasMinado> metricas = cargarMetricasMinadoDeWhatToMine();
-        repository.deleteAll();
-        repository.saveAll(metricas);
-    }
-
-    public List<MetricasMinado> findAllMetricasMinado() {
-        try {
-            List<MetricasMinado> res = repository.findAll();
-            if (res.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "No se encontraron metricas de minado en base de datos.");
-            }
-            return res;
-        } catch (ResponseStatusException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        if (repository.count() == 0) {
+            List<MetricasMinado> metricas = cargarMetricasMinadoDeWhatToMine();
+            repository.deleteAll();
+            repository.saveAll(metricas);
         }
     }
 
@@ -104,7 +91,8 @@ public class MetricasMinadoService {
                 long nethash = item.path("nethash").asLong(0L);
                 Double blockTime = Double.valueOf(item.path("block_time").asText(null));
                 Double blockReward = item.path("block_reward24").asDouble(item.path("block_reward").asDouble(0.0));
-                Double precioMedioEur = extraerPrecioMedioEur(item.path("exchanges"), nombreMoneda, precioBitcoinEur);
+                Double precioExchangeBtc = obtenerPrecioExchangeEnBtc(item.path("exchanges"));
+                Double precioActualEur = obtenerPrecioActualEurPorMoneda(nombreMoneda, precioExchangeBtc, precioBitcoinEur);
 
                 if (coinId == null || coinId <= 0) {
                     continue;
@@ -118,7 +106,7 @@ public class MetricasMinadoService {
                 if (nethash <= 0L || blockTime <= 0.0 || blockReward <= 0.0) {
                     continue;
                 }
-                if (precioMedioEur == null || precioMedioEur <= 0.0) {
+                if (precioActualEur == null || precioActualEur <= 0.0) {
                     continue;
                 }
 
@@ -129,7 +117,7 @@ public class MetricasMinadoService {
                         nethash,
                         blockTime,
                         blockReward,
-                        precioMedioEur);
+                        precioActualEur);
                 res.add(metrica);
             }
 
@@ -142,133 +130,137 @@ public class MetricasMinadoService {
         }
     }
 
-    private Double extraerPrecioMedioEur(JsonNode exchangesNode, String nombreMoneda, Double precioBitcoinEur) {
-        if (exchangesNode == null || !exchangesNode.isArray() || exchangesNode.isEmpty()) {
-            return null;
-        }
+    private Double obtenerPrecioActualEurPorMoneda(String nombreMoneda, Double precioExchangeBtc, Double precioBitcoinEur) {
+        try {
+            String assetId = null;
 
-        List<Double> precios = new ArrayList<>();
-
-        for (JsonNode exchange : exchangesNode) {
-            JsonNode precioNode = exchange.path("price");
-            double precio = precioNode.asDouble();
-            if (precio > 0.0 && Double.isFinite(precio)) {
-                precios.add(precio);
+            if (nombreMoneda != null && !nombreMoneda.isBlank()) {
+                Criptomoneda criptoPorNombre = criptomonedaRepository.findByNameIgnoreCase(nombreMoneda).orElse(null);
+                if (criptoPorNombre != null) {
+                    assetId = criptoPorNombre.getAssetId();
+                }
             }
-        }
 
-        if (precios.isEmpty()) {
+            if (assetId != null && !assetId.isBlank()) {
+                BigDecimal precioActual = criptomonedaRepository.findLatestPriceByAssetId(assetId).orElse(null);
+                if (precioActual != null && precioActual.doubleValue() > 0.0) {
+                    return precioActual.doubleValue();
+                }
+            }
+
+            if (precioExchangeBtc != null && precioExchangeBtc > 0.0
+                    && precioBitcoinEur != null && precioBitcoinEur > 0.0) {
+                return precioExchangeBtc * precioBitcoinEur;
+            }
+
+            return null;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
             return null;
         }
-
-        List<Double> preciosFiltrados = filtrarOutliersIqr(precios);
-        double precioRepresentativo = calcularMediana(preciosFiltrados);
-
-        // Para Bitcoin el precio suele venir ya en dólares, así que se convierte a euros.
-        if (nombreMoneda != null && nombreMoneda.equalsIgnoreCase("Bitcoin")) {
-            return convertirUsdAEurRedondeado(precioRepresentativo);
-        }
-
-        // Para el resto se aproxima respecto a BTC y se normaliza a euros.
-        if (precioBitcoinEur == null || precioBitcoinEur <= 0.0) {
-            return null;
-        }
-
-        return redondear(precioRepresentativo * precioBitcoinEur, 8);
     }
 
     private Double obtenerPrecioBitcoinEur() {
         try {
-            BigDecimal precioActualBitcoin = criptomonedaRepository.findLatestPriceByAssetId("bitcoin")
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "No se encontró el último precio de bitcoin."));
-            return precioActualBitcoin.doubleValue();
+            BigDecimal precioBitcoin = criptomonedaRepository.findLatestPriceByAssetId(BITCOIN_ASSET_ID).orElse(null);
+            if (precioBitcoin == null || precioBitcoin.doubleValue() <= 0.0) {
+                return null;
+            }
+            return precioBitcoin.doubleValue();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    //WhatToMine solo ofrece el precio de las monedas a través del cambio a BTC, como el precio real de bitcoin
+    //lo conocemos a través de coincap, es cuestión de multiplicar
+    private Double obtenerPrecioExchangeEnBtc(JsonNode exchangesNode) {
+        if (exchangesNode == null || !exchangesNode.isArray() || exchangesNode.isEmpty()) {
+            return null;
+        }
+
+        JsonNode primerExchange = exchangesNode.get(0);
+        if (primerExchange == null || primerExchange.isMissingNode()) {
+            return null;
+        }
+
+        JsonNode priceNode = primerExchange.path("price");
+        if (priceNode.isMissingNode() || priceNode.isNull()) {
+            return null;
+        }
+
+        double price = priceNode.asDouble(0.0);
+        return price > 0.0 ? price : null;
+    }
+
+    public List<MetricasMinado> findAllMetricasMinado() {
+        try {
+            List<MetricasMinado> res = repository.findAll();
+            if (res.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron métricas de minado en base de datos.");
+            }
+            return res;
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error parseando el precio de Bitcoin desde CoinCap: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    private Double convertirUsdAEurRedondeado(Double precioUsd) {
-        if (precioUsd == null || precioUsd <= 0.0) {
-            return null;
-        }
-
-        Double precioEur = monedaTradicionalService.convertirCantidad(precioUsd, "USD", "EUR");
-        return redondear(precioEur, 8);
-    }
-
-    //Elimina valores que despunten mucho (podrían provocar desviaciones en los precios)
-    private List<Double> filtrarOutliersIqr(List<Double> valores) {
-        if (valores.size() < 4) {
-            return valores;
-        }
-
-        List<Double> ordenados = new ArrayList<>(valores);
-        Collections.sort(ordenados);
-
-        double q1 = calcularPercentil(ordenados, 25.0);
-        double q3 = calcularPercentil(ordenados, 75.0);
-        double iqr = q3 - q1;
-
-        if (iqr <= 0.0) {
-            return ordenados;
-        }
-
-        double min = q1 - (1.5 * iqr);
-        double max = q3 + (1.5 * iqr);
-
-        List<Double> filtrados = new ArrayList<>();
-        for (Double valor : ordenados) {
-            if (valor >= min && valor <= max) {
-                filtrados.add(valor);
+    public List<String> findAllNombresMonedasParaCalculo() {
+        try {
+            List<String> res = repository.findAllNombresMonedasParaCalculo();
+            if (res.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron monedas con métricas disponibles.");
             }
+            return res;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-
-        return filtrados.isEmpty() ? ordenados : filtrados;
     }
 
-    //La mediana es mejor que la media en estos casos
-    private double calcularMediana(List<Double> valores) {
-        if (valores == null || valores.isEmpty()) {
-            return 0.0;
+
+    public List<MonedaAlgoritmosDto> findAllMonedasParaCalculoConAlgoritmo() {
+        try {
+            List<MonedaAlgoritmosDto> res = repository.findAll().stream()
+                    .collect(Collectors.groupingBy(
+                            MetricasMinado::getNombreMoneda,
+                            Collectors.mapping(MetricasMinado::getAlgoritmo,
+                                    Collectors.toCollection(LinkedHashSet::new))))
+                    .entrySet()
+                    .stream()
+                    .map(entry -> new MonedaAlgoritmosDto(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
+            if (res.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontraron monedas con métricas disponibles.");
+            }
+            return res;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-
-        List<Double> ordenados = new ArrayList<>(valores);
-        Collections.sort(ordenados);
-
-        int n = ordenados.size();
-        if (n % 2 == 1) {
-            return ordenados.get(n / 2);
-        }
-
-        return (ordenados.get((n / 2) - 1) + ordenados.get(n / 2)) / 2.0;
     }
 
-    private double calcularPercentil(List<Double> valoresOrdenados, double percentil) {
-        int n = valoresOrdenados.size();
-        if (n == 1) {
-            return valoresOrdenados.get(0);
+    public MetricasMinado findMetricasByNombre(String nombreMoneda) {
+        try {
+            if (nombreMoneda == null || nombreMoneda.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debes indicar el nombre de la moneda.");
+            }
+
+            return repository.findByNombreMonedaIgnoreCase(nombreMoneda.trim())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "No se encontraron métricas de minado para la moneda indicada."));
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-
-        double posicion = (percentil / 100.0) * (n - 1);
-        int base = (int) Math.floor(posicion);
-        int techo = (int) Math.ceil(posicion);
-
-        if (base == techo) {
-            return valoresOrdenados.get(base);
-        }
-
-        double fraccion = posicion - base;
-        return valoresOrdenados.get(base) + fraccion * (valoresOrdenados.get(techo) - valoresOrdenados.get(base));
-    }
-
-    private Double redondear(Double valor, int escala) {
-        if (valor == null || !Double.isFinite(valor)) {
-            return null;
-        }
-        return BigDecimal.valueOf(valor).setScale(escala, RoundingMode.HALF_UP).doubleValue();
     }
 }
