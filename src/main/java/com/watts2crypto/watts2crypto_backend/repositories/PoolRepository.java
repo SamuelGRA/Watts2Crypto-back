@@ -19,8 +19,9 @@ public interface PoolRepository extends BaseRepository<Pool> {
     @Query("""
             SELECT DISTINCT p.nombre
             FROM Pool p
-            JOIN p.algoritmos a
-            WHERE LOWER(a) = LOWER(:algoritmo)
+            JOIN p.detallesMonedaComision pmc
+            JOIN MetricasMinado mm ON LOWER(mm.nombreMoneda) = LOWER(pmc.moneda)
+            WHERE LOWER(mm.algoritmo) = LOWER(:algoritmo)
             """)
     List<String> findNamesByAlgorithm(@Param("algoritmo") String algoritmo);
 }
