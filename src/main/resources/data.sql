@@ -153,37 +153,28 @@ MERGE INTO electricidad_por_pais (pais, precio_kwh) KEY(pais) VALUES ('Etiopía'
 MERGE INTO electricidad_por_pais (pais, precio_kwh) KEY(pais) VALUES ('Irán', 0.001);
 
 -- ============================================================
--- SOFTWARE DE MINERÍA (pantalla de información y comisión en cálculos de rentabilidad) (tabla principal) --
+-- SOFTWARE DE MINERÍA (tabla principal)
 -- ============================================================
 
-MERGE INTO software (nombre, comision, tipo_software) KEY(nombre) VALUES
-('T-Rex Miner',    1.00, 'MINERO'),
-('lolMiner',       1.00, 'MINERO'),
-('TeamRedMiner',   0.75, 'MINERO'),
-('NBMiner',        1.00, 'MINERO'),
-('GMiner',         2.00, 'MINERO'),
-('XMRig',          1.00, 'MINERO'),
-('PhoenixMiner',   0.65, 'MINERO'),
-('SRBMiner-Multi', 0.85, 'MINERO'),
-('BzMiner',        1.00, 'MINERO'),
-('Rigel Miner',    1.00, 'MINERO'),
-('cpuminer-opt',   0.00, 'MINERO'),
-('CGMiner',        0.00, 'MINERO'),
-('BFGMiner',       0.00, 'MINERO'),
-('ccminer',        0.00, 'MINERO'),
-('WildRig Multi',  2.00, 'MINERO'),
-('Bminer',         0.65, 'MINERO'),
-('miniZ',          2.00, 'MINERO'),
-('Ethminer',       0.00, 'MINERO'),
-('TeamBlackMiner', 0.50, 'MINERO'),
-('NiceHash Miner', 2.00, 'PLATAFORMA'),
-('HiveOS',         3.00, 'PLATAFORMA'),
-('Awesome Miner',  0.00, 'PLATAFORMA'),
-('Cudo Miner',     1.50, 'PLATAFORMA'),
-('Minerstat',      0.00, 'PLATAFORMA'),
-('Braiins OS+',    2.00, 'PLATAFORMA'),
-('Kryptex Miner',  1.00, 'PLATAFORMA'),
-('EasyMiner',      0.00, 'PLATAFORMA');
+MERGE INTO software (nombre, hashrate_slug) KEY(nombre) VALUES
+('T-Rex Miner',    'trex'),
+('lolMiner',       'lolminer'),
+('TeamRedMiner',   'teamredminer'),
+('NBMiner',        'nbminer'),
+('GMiner',         'gminer'),
+('XMRig',          'xmrig'),
+('PhoenixMiner',   'phoenixminer'),
+('SRBMiner-Multi', 'srbminer'),
+('BzMiner',        'bzminer'),
+('Rigel Miner',    'rigel'),
+('cpuminer-opt',   'cpuminer-opt-supr'),
+('WildRig Multi',  'wildrigmulti'),
+('TeamBlackMiner', 'teamblackminer'),
+('OneZeroMiner',   'onezerominer'),
+('TNNMiner',       'tnnminer'),
+('suprminer',      'suprminer'),
+('TTminer',        'ttminer'),
+('DankMiner',      'dankminer');
 
 -- ============================================================
 -- SOFTWARE DE MINERÍA - Hardware Usable
@@ -194,8 +185,7 @@ MERGE INTO software_hardware_usable (software_id, hardware_usable)
 KEY(software_id, hardware_usable)
 SELECT id, 'GPU' FROM software WHERE nombre IN (
     'T-Rex Miner', 'lolMiner', 'TeamRedMiner', 'NBMiner', 'GMiner',
-    'PhoenixMiner', 'BzMiner', 'Rigel Miner', 'WildRig Multi', 'Bminer',
-    'miniZ', 'Ethminer', 'TeamBlackMiner', 'ccminer'
+    'PhoenixMiner', 'BzMiner', 'Rigel Miner', 'WildRig Multi', 'TeamBlackMiner'
 );
 
 -- solo CPU
@@ -209,317 +199,73 @@ SELECT id, 'CPU' FROM software WHERE nombre IN (
 MERGE INTO software_hardware_usable (software_id, hardware_usable)
 KEY(software_id, hardware_usable)
 SELECT id, 'CPU' FROM software WHERE nombre IN (
-    'XMRig', 'SRBMiner-Multi', 'NiceHash Miner', 'Cudo Miner',
-    'Kryptex Miner', 'EasyMiner'
+    'XMRig', 'SRBMiner-Multi', 'TNNMiner', 'DankMiner'
 );
 MERGE INTO software_hardware_usable (software_id, hardware_usable)
 KEY(software_id, hardware_usable)
 SELECT id, 'GPU' FROM software WHERE nombre IN (
-    'XMRig', 'SRBMiner-Multi', 'NiceHash Miner', 'Cudo Miner',
-    'Kryptex Miner', 'EasyMiner'
+    'XMRig', 'SRBMiner-Multi', 'TNNMiner', 'DankMiner'
 );
 
--- GPU + ASIC
+-- GPU solo (NVIDIA + AMD)
 MERGE INTO software_hardware_usable (software_id, hardware_usable)
 KEY(software_id, hardware_usable)
 SELECT id, 'GPU' FROM software WHERE nombre IN (
-    'CGMiner', 'Awesome Miner', 'Minerstat'
-);
-MERGE INTO software_hardware_usable (software_id, hardware_usable)
-KEY(software_id, hardware_usable)
-SELECT id, 'ASIC' FROM software WHERE nombre IN (
-    'CGMiner', 'Awesome Miner', 'Minerstat'
+    'OneZeroMiner', 'suprminer'
 );
 
--- solo ASIC
+-- GPU solo (NVIDIA)
 MERGE INTO software_hardware_usable (software_id, hardware_usable)
 KEY(software_id, hardware_usable)
-SELECT id, 'ASIC' FROM software WHERE nombre IN (
-    'BFGMiner', 'Braiins OS+'
-);
-
--- CPU + GPU + ASIC
-MERGE INTO software_hardware_usable (software_id, hardware_usable)
-KEY(software_id, hardware_usable)
-SELECT id, 'CPU' FROM software WHERE nombre = 'HiveOS';
-MERGE INTO software_hardware_usable (software_id, hardware_usable)
-KEY(software_id, hardware_usable)
-SELECT id, 'GPU' FROM software WHERE nombre = 'HiveOS';
-MERGE INTO software_hardware_usable (software_id, hardware_usable)
-KEY(software_id, hardware_usable)
-SELECT id, 'ASIC' FROM software WHERE nombre = 'HiveOS';
+SELECT id, 'GPU' FROM software WHERE nombre = 'TTminer';
 
 -- ============================================================
 -- SOFTWARE DE MINERÍA - Sistemas Operativos
 -- ============================================================
 
--- Windows + Linux
 MERGE INTO software_sistemas (software_id, sistemas)
 KEY(software_id, sistemas)
 SELECT id, 'WINDOWS' FROM software WHERE nombre IN (
     'T-Rex Miner', 'lolMiner', 'TeamRedMiner', 'NBMiner', 'GMiner',
     'XMRig', 'PhoenixMiner', 'SRBMiner-Multi', 'BzMiner', 'Rigel Miner',
-    'cpuminer-opt', 'WildRig Multi', 'Bminer', 'miniZ', 'TeamBlackMiner',
-    'ccminer', 'Awesome Miner', 'Minerstat', 'Kryptex Miner', 'EasyMiner'
+    'cpuminer-opt', 'WildRig Multi', 'TeamBlackMiner',
+    'OneZeroMiner', 'TNNMiner', 'suprminer', 'TTminer', 'DankMiner'
 );
 MERGE INTO software_sistemas (software_id, sistemas)
 KEY(software_id, sistemas)
 SELECT id, 'LINUX' FROM software WHERE nombre IN (
     'T-Rex Miner', 'lolMiner', 'TeamRedMiner', 'NBMiner', 'GMiner',
     'XMRig', 'PhoenixMiner', 'SRBMiner-Multi', 'BzMiner', 'Rigel Miner',
-    'cpuminer-opt', 'WildRig Multi', 'Bminer', 'miniZ', 'TeamBlackMiner',
-    'ccminer', 'Minerstat', 'Kryptex Miner', 'EasyMiner'
-);
-
--- Windows + Linux + macOS
-MERGE INTO software_sistemas (software_id, sistemas)
-KEY(software_id, sistemas)
-SELECT id, 'WINDOWS' FROM software WHERE nombre IN (
-    'CGMiner', 'BFGMiner', 'Ethminer', 'Cudo Miner'
-);
-MERGE INTO software_sistemas (software_id, sistemas)
-KEY(software_id, sistemas)
-SELECT id, 'LINUX' FROM software WHERE nombre IN (
-    'CGMiner', 'BFGMiner', 'Ethminer', 'Cudo Miner'
-);
-MERGE INTO software_sistemas (software_id, sistemas)
-KEY(software_id, sistemas)
-SELECT id, 'MACOS' FROM software WHERE nombre IN (
-    'CGMiner', 'BFGMiner', 'Ethminer', 'Cudo Miner'
-);
-
--- solo Windows
-MERGE INTO software_sistemas (software_id, sistemas)
-KEY(software_id, sistemas)
-SELECT id, 'WINDOWS' FROM software WHERE nombre IN (
-    'NiceHash Miner', 'Awesome Miner'
-);
-
--- solo Linux
-MERGE INTO software_sistemas (software_id, sistemas)
-KEY(software_id, sistemas)
-SELECT id, 'LINUX' FROM software WHERE nombre IN (
-    'HiveOS', 'Braiins OS+'
+    'cpuminer-opt', 'WildRig Multi', 'TeamBlackMiner',
+    'OneZeroMiner', 'TNNMiner', 'suprminer', 'TTminer', 'DankMiner'
 );
 
 -- ============================================================
--- SOFTWARE DE MINERÍA - Algoritmos
+-- POOLS - Datos principales
+-- NOTA: los slugs se usan solo para los pools que existen en hashrate.no
 -- ============================================================
 
--- T-Rex Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('KawPow'), ('Octopus'), ('MTP'), ('Progpow')) AS a(algo)
-ON nombre = 'T-Rex Miner';
-
--- lolMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('Equihash'), ('BeamHash'), ('EthashB3'), ('Autolykos2')) AS a(algo)
-ON nombre = 'lolMiner';
-
--- TeamRedMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('KawPow'), ('Autolykos2'), ('Progpow'), ('Kaspa')) AS a(algo)
-ON nombre = 'TeamRedMiner';
-
--- NBMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('Octopus'), ('KawPow'), ('Ergo'), ('BeamHash')) AS a(algo)
-ON nombre = 'NBMiner';
-
--- GMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Equihash'), ('BeamHash'), ('Ethash'), ('Octopus'), ('KawPow')) AS a(algo)
-ON nombre = 'GMiner';
-
--- XMRig
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('RandomX'), ('KawPow'), ('CryptoNight'), ('GhostRider'), ('Argon2')) AS a(algo)
-ON nombre = 'XMRig';
-
--- PhoenixMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('EthashB3'), ('Autolykos2')) AS a(algo)
-ON nombre = 'PhoenixMiner';
-
--- SRBMiner-Multi
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('RandomX'), ('Ethash'), ('Autolykos2'), ('KawPow'), ('GhostRider')) AS a(algo)
-ON nombre = 'SRBMiner-Multi';
-
--- BzMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('Alephium'), ('KawPow'), ('Blake3'), ('Octopus')) AS a(algo)
-ON nombre = 'BzMiner';
-
--- Rigel Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('KawPow'), ('NexaPow'), ('Octopus'), ('EthashB3')) AS a(algo)
-ON nombre = 'Rigel Miner';
-
--- cpuminer-opt
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Scrypt'), ('X11'), ('RandomX'), ('Yescrypt')) AS a(algo)
-ON nombre = 'cpuminer-opt';
-
--- CGMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Scrypt')) AS a(algo)
-ON nombre = 'CGMiner';
-
--- BFGMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Scrypt')) AS a(algo)
-ON nombre = 'BFGMiner';
-
--- ccminer
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('X11'), ('Lyra2v2'), ('NeoScrypt'), ('Blake2s'), ('Skein')) AS a(algo)
-ON nombre = 'ccminer';
-
--- WildRig Multi
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('X16r'), ('X21s'), ('BCD'), ('KawPow'), ('Megabtx')) AS a(algo)
-ON nombre = 'WildRig Multi';
-
--- Bminer
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Equihash'), ('Ethash'), ('Octopus'), ('Blake2s')) AS a(algo)
-ON nombre = 'Bminer';
-
--- miniZ
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Equihash'), ('BeamHash'), ('KawPow'), ('Ethash')) AS a(algo)
-ON nombre = 'miniZ';
-
--- Ethminer
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash')) AS a(algo)
-ON nombre = 'Ethminer';
-
--- TeamBlackMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('Autolykos2'), ('KawPow'), ('SHA512')) AS a(algo)
-ON nombre = 'TeamBlackMiner';
-
--- NiceHash Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Ethash'), ('RandomX'), ('X11'), ('KawPow')) AS a(algo)
-ON nombre = 'NiceHash Miner';
-
--- HiveOS
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Ethash'), ('RandomX'), ('KawPow'), ('Equihash')) AS a(algo)
-ON nombre = 'HiveOS';
-
--- Awesome Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Ethash'), ('RandomX'), ('KawPow'), ('Equihash')) AS a(algo)
-ON nombre = 'Awesome Miner';
-
--- Cudo Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Ethash'), ('RandomX'), ('KawPow'), ('CryptoNight')) AS a(algo)
-ON nombre = 'Cudo Miner';
-
--- Minerstat
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Ethash'), ('RandomX'), ('Equihash'), ('KawPow')) AS a(algo)
-ON nombre = 'Minerstat';
-
--- Braiins OS+
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256')) AS a(algo)
-ON nombre = 'Braiins OS+';
-
--- Kryptex Miner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('Ethash'), ('RandomX'), ('KawPow'), ('SHA-256')) AS a(algo)
-ON nombre = 'Kryptex Miner';
-
--- EasyMiner
-MERGE INTO software_algoritmos (software_id, algoritmos)
-KEY(software_id, algoritmos)
-SELECT id, algo FROM software
-JOIN (VALUES ('SHA-256'), ('Scrypt')) AS a(algo)
-ON nombre = 'EasyMiner';
-
--- ============================================================
--- POOLS - Columnas simples
--- ============================================================
-MERGE INTO pool (nombre, comision) KEY(nombre) VALUES
-('AntPool',      2.50),
-('F2Pool',       2.50),
-('ViaBTC',       2.00),
-('Braiins Pool', 2.50),
-('Foundry USA',  2.50),
-('Luxor',        0.70),
-('2Miners',      1.00),
-('Nanopool',     1.00),
-('SpiderPool',   1.00),
-('EMCD',         1.50),
-('DxPool',       0.50),
-('SupportXMR',   0.60),
-('MoneroOcean',  0.00),
-('Litecoinpool', 2.00),
-('P2Pool',       0.00),
-('Binance Pool', 2.50), 
-('BTC.com',      2.00), 
-('Poolin',       2.50), 
-('unMineable',   1.00), 
-('Prohashing',   1.99), 
-('Mining Pool Hub', 0.90);
+MERGE INTO pool (nombre, hashrate_slug) KEY(nombre) VALUES
+('AntPool',          'antpool'),
+('F2Pool',           'f2pool'),
+('Luxor',            'luxor'),
+('2Miners',          '2miners'),
+('Nanopool',         'nanopool'),
+('SupportXMR',       'supportxmr'),
+('MoneroOcean',      'moneroocean'),
+('Kryptex',          'kryptex'),
+('P2Pool',           'p2pool'),
+('Binance Pool',     'binance'),
+('Poolin',           'poolin'),
+('1Miner',           '1miner'),
+('CedricCrispin',    'cedriccrispin'),
+('CrazyPool',        'crazypool'),
+('CruxPool',         'cruxpool'),
+('GrandPool',        'grandpool'),
+('HeroMiners',       'herominers'),
+('K1Pool',           'k1pool'),
+('Suprnova',         'suprnova'),
+('WoolyPooly',       'woolypooly');
 
 -- ============================================================
 -- POOLS - Esquemas de pago
@@ -537,41 +283,46 @@ SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('PPS_PLUS'), ('FPPS')) AS t(e) O
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
 SELECT id, e FROM pool JOIN (VALUES ('PPS_PLUS'), ('FPPS'), ('PPLNS')) AS t(e) ON nombre = 'F2Pool';
 
--- FPPS + PPLNS + SOLO
-MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago) 
-SELECT id, e FROM pool JOIN (VALUES ('FPPS'), ('PPLNS'), ('SOLO')) AS t(e) ON nombre = 'Prohashing';
-
--- PPS + PPLNS
-MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, e FROM pool JOIN (VALUES ('PPS'), ('PPLNS')) AS t(e) ON nombre = 'ViaBTC';
-
--- solo FPPS
-MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, 'FPPS' FROM pool WHERE nombre IN ('Braiins Pool', 'Foundry USA');
-
 -- FPPS + PPLNS
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
 SELECT id, e FROM pool JOIN (VALUES ('FPPS'), ('PPLNS')) AS t(e) ON nombre IN ('Luxor', 'Poolin');
 
 -- PPLNS + SOLO
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('SOLO')) AS t(e) ON nombre IN ('2Miners', 'P2Pool');
+SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('SOLO')) AS t(e) ON nombre IN ('2Miners', 'P2Pool', '1Miner');
 
 -- solo PPLNS
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
 SELECT id, 'PPLNS' FROM pool WHERE nombre IN ('Nanopool', 'SupportXMR', 'MoneroOcean');
 
--- PPS_PLUS + PPLNS
-MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, e FROM pool JOIN (VALUES ('PPS_PLUS'), ('PPLNS')) AS t(e) ON nombre IN ('SpiderPool', 'DxPool', 'BTC.com', 'Mining Pool Hub');
+-- nuevas pools
 
--- PPS_PLUS + SOLO
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, e FROM pool JOIN (VALUES ('PPS_PLUS'), ('SOLO')) AS t(e) ON nombre = 'EMCD';
+SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('PPLNSBF')) AS t(e) ON nombre = 'CedricCrispin';
 
--- solo PPS
 MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
-SELECT id, 'PPS' FROM pool WHERE nombre IN ('Litecoinpool', 'unMineable');
+SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('PPS')) AS t(e) ON nombre = 'CrazyPool';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, e FROM pool JOIN (VALUES ('SOLO'), ('PPLNS'), ('PROP')) AS t(e) ON nombre = 'GrandPool';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, 'PROP' FROM pool WHERE nombre = 'HeroMiners';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('SOLO'), ('PPS')) AS t(e) ON nombre = 'K1Pool';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, e FROM pool JOIN (VALUES ('PPLNS'), ('PROP')) AS t(e) ON nombre = 'Suprnova';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, 'PPLNS' FROM pool WHERE nombre = 'WoolyPooly';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, 'PPS' FROM pool WHERE nombre = 'CruxPool';
+
+MERGE INTO pool_esquema_de_pago (pool_id, esquema_de_pago) KEY(pool_id, esquema_de_pago)
+SELECT id, e FROM pool JOIN (VALUES ('PROP'), ('PPS_PLUS'), ('PPS')) AS t(e) ON nombre = 'Kryptex';
 
 -- ============================================================
 -- POOLS - Regiones
@@ -580,128 +331,19 @@ SELECT id, 'PPS' FROM pool WHERE nombre IN ('Litecoinpool', 'unMineable');
 -- EU + US + ASIA
 MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
 SELECT id, r FROM pool JOIN (VALUES ('EU'), ('US'), ('ASIA')) AS t(r)
-ON nombre IN ('AntPool', 'F2Pool', 'ViaBTC', 'Braiins Pool', '2Miners', 'Nanopool', 'SpiderPool', 'DxPool', 'P2Pool', 'Binance Pool', 'BTC.com', 'Poolin', 'unMineable', 'Mining Pool Hub');
+ON nombre IN ('AntPool', 'F2Pool', 'ViaBTC', '2Miners', 'Nanopool', 'P2Pool', 'Binance Pool', 'Poolin', '1Miner', 'CrazyPool', 'HeroMiners', 'K1Pool', 'Suprnova', 'WoolyPooly', 'Kryptex');
 
--- solo US
+-- solo ASIA
 MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
-SELECT id, 'US' FROM pool WHERE nombre IN ('Foundry USA', 'Luxor');
-
--- solo EU
-MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
-SELECT id, 'EU' FROM pool WHERE nombre = 'EMCD';
+SELECT id, 'ASIA' FROM pool WHERE nombre = 'CedricCrispin';
 
 -- EU + US
 MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
 SELECT id, r FROM pool JOIN (VALUES ('EU'), ('US')) AS t(r)
-ON nombre IN ('SupportXMR', 'MoneroOcean', 'Litecoinpool', 'Prohashing');
+ON nombre IN ('SupportXMR', 'MoneroOcean', 'GrandPool', 'CruxPool');
 
--- ============================================================
--- POOLS - Monedas
--- ============================================================
+-- solo US
+MERGE INTO pool_regiones (pool_id, region) KEY(pool_id, region)
+SELECT id, 'US' FROM pool WHERE nombre = 'Luxor';
 
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('BCH'), ('LTC')) AS t(m) ON nombre = 'AntPool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('ETH'), ('LTC'), ('XMR')) AS t(m) ON nombre = 'F2Pool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('BCH'), ('LTC'), ('ETH')) AS t(m) ON nombre = 'ViaBTC';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, 'BTC' FROM pool WHERE nombre IN ('Braiins Pool', 'Foundry USA');
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('LTC'), ('DASH')) AS t(m) ON nombre = 'Luxor';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('ETC'), ('XMR'), ('RVN')) AS t(m) ON nombre = '2Miners';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('XMR'), ('RVN'), ('CFX'), ('ERGO')) AS t(m) ON nombre = 'Nanopool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('ETH'), ('ETC')) AS t(m) ON nombre = 'SpiderPool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('LTC'), ('BCH')) AS t(m) ON nombre = 'EMCD';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('XMR'), ('LTC')) AS t(m) ON nombre = 'DxPool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, 'XMR' FROM pool WHERE nombre IN ('SupportXMR', 'MoneroOcean', 'P2Pool');
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda)
-SELECT id, m FROM pool JOIN (VALUES ('LTC'), ('DOGE')) AS t(m) ON nombre = 'Litecoinpool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('BCH'), ('LTC'), ('ETC'), ('ZEC')) AS t(m) ON nombre = 'Binance Pool';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('BCH'), ('LTC')) AS t(m) ON nombre = 'BTC.com';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('BCH'), ('LTC'), ('ZEC'), ('DASH')) AS t(m) ON nombre = 'Poolin';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('ETH'), ('DOGE'), ('SHIB')) AS t(m) ON nombre = 'unMineable';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('BTC'), ('LTC'), ('XMR'), ('DOGE')) AS t(m) ON nombre = 'Prohashing';
-
-MERGE INTO pool_monedas (pool_id, moneda) KEY(pool_id, moneda) 
-SELECT id, m FROM pool JOIN (VALUES ('ETH'), ('ETC'), ('XMR'), ('LTC')) AS t(m) ON nombre = 'Mining Pool Hub';
-
--- ============================================================
--- POOLS - Algoritmos
--- ============================================================
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt')) AS t(a) ON nombre IN ('AntPool', 'ViaBTC', 'EMCD', 'Litecoinpool');
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Ethash'), ('Scrypt'), ('RandomX')) AS t(a) ON nombre = 'F2Pool';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('Ethash')) AS t(a) ON nombre = 'ViaBTC';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, 'SHA-256' FROM pool WHERE nombre IN ('Braiins Pool', 'Foundry USA');
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('X11')) AS t(a) ON nombre = 'Luxor';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('RandomX'), ('KawPow')) AS t(a) ON nombre = '2Miners';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('RandomX'), ('KawPow'), ('Octopus'), ('Autolykos2')) AS t(a) ON nombre = 'Nanopool';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Ethash')) AS t(a) ON nombre = 'SpiderPool';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('RandomX'), ('Scrypt')) AS t(a) ON nombre = 'DxPool';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo)
-SELECT id, 'RandomX' FROM pool WHERE nombre IN ('SupportXMR', 'MoneroOcean', 'P2Pool');
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('Ethash'), ('Equihash')) AS t(a) ON nombre = 'Binance Pool';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt')) AS t(a) ON nombre = 'BTC.com';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('Equihash'), ('X11')) AS t(a) ON nombre = 'Poolin';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('KawPow'), ('RandomX')) AS t(a) ON nombre = 'unMineable';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('SHA-256'), ('Scrypt'), ('RandomX'), ('X11')) AS t(a) ON nombre = 'Prohashing';
-
-MERGE INTO pool_algoritmos (pool_id, algoritmo) KEY(pool_id, algoritmo) 
-SELECT id, a FROM pool JOIN (VALUES ('Ethash'), ('RandomX'), ('Scrypt')) AS t(a) ON nombre = 'Mining Pool Hub';
 

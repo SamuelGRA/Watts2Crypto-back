@@ -1,5 +1,6 @@
 package com.watts2crypto.watts2crypto_backend.repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
@@ -11,5 +12,8 @@ public interface ElectricidadPorPaisRepository extends BaseRepository<Electricid
 
     @Query("SELECT epp.precioKwh FROM ElectricidadPorPais epp WHERE LOWER(epp.pais) = LOWER(:pais)")
     Optional<Double> findPrecioByPais(@Param("pais") String pais);
+
+    @Query("SELECT epp FROM ElectricidadPorPais epp ORDER BY epp.pais")
+    List<ElectricidadPorPais> findAllPaises();
     
 }

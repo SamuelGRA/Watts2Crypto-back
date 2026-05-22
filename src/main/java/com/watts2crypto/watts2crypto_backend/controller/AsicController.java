@@ -41,4 +41,9 @@ public class AsicController {
 																		@PathVariable String algoritmo) {
 		return service.findHashrateYConsumoPorNombreYAlgoritmo(nombre, algoritmo);
 	}
+
+	@GetMapping("/byAlgoritmo/{algoritmo}")
+	public List<String> getAsicsByAlgorithm(@PathVariable String algoritmo) {
+		return service.findNamesByAlgorithm(algoritmo);
+	}
 }

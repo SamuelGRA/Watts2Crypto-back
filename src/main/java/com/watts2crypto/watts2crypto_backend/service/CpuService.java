@@ -138,4 +138,20 @@ public class CpuService {
         }
     }
 
+    public List<String> findNamesByAlgorithm(String algoritmo) {
+        try {
+            String algoNormalizado = algoritmo.trim().toLowerCase();
+            // Las CPU solo son compatibles con RandomX
+            if (!algoNormalizado.contains("randomx")) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Las CPUs solo son compatibles con el algoritmo RandomX.");
+            }
+            return findAllCpuNames();
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
 }

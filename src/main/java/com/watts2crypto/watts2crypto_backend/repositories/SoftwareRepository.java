@@ -19,8 +19,8 @@ public interface SoftwareRepository extends BaseRepository<Software> {
     @Query("""
             SELECT DISTINCT s.nombre
             FROM Software s
-            JOIN s.algoritmos a
-            WHERE LOWER(a) = LOWER(:algoritmo)
+            JOIN s.detallesAlgoritmoMoneda sam
+            WHERE LOWER(sam.algoritmo) = LOWER(:algoritmo)
             """)
     List<String> findNamesByAlgorithm(@Param("algoritmo") String algoritmo);
 }

@@ -25,4 +25,12 @@ public interface AsicRepository extends BaseRepository<Asic> {
              AND LOWER(key(raEntry)) = LOWER(:algorithm)
            """)
     Optional<RendimientoAlgoritmo> findHashrateAndPowerByAsicAndAlgorithm(@Param("name") String name, @Param("algorithm") String algorithm);
+
+    @Query("""
+           SELECT DISTINCT a.nombre
+           FROM Asic a
+           JOIN a.algoritmos raEntry
+           WHERE LOWER(key(raEntry)) = LOWER(:algoritmo)
+           """)
+    List<String> findNamesByAlgorithm(@Param("algoritmo") String algoritmo);
 }

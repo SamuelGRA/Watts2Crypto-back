@@ -1,9 +1,11 @@
 //Esta entidad representará una pool de minería
 package com.watts2crypto.watts2crypto_backend.models;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -14,9 +16,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,6 +30,8 @@ public class Pool {
         PPS, //pay per share
         PPLNS, //pay per last N shares (pago por contribucion reciente)
         SOLO, //pago solo si se encuentra el bloque
+        PROP, //pay per round
+        PPLNSBF, //PPLNS con bonus/fees específicos de la pool
         PPS_PLUS, //pps + tarifas de transaccion
         FPPS //pps + otras tarifas
     }
@@ -43,15 +46,9 @@ public class Pool {
     private String nombre;
 
     @NotNull
-    @DecimalMin("0.0")
-    @DecimalMax("100.0")
-    @Column(nullable = false)
-    private Double comision;
-
-    @NotNull
     @ElementCollection
     @Enumerated(EnumType.STRING)
-    private Set<EsquemaDePago> esquemaDePago; // PPS, PPLNS, SOLO
+    private Set<EsquemaDePago> esquemaDePago; // PPS, PPLNS, SOLO, PROP, PPLNSBF, PPS_PLUS, FPPS
 
     @ElementCollection
     @CollectionTable(name = "pool_regiones", joinColumns = @JoinColumn(name = "pool_id"))
@@ -59,29 +56,28 @@ public class Pool {
     @NotEmpty
     private List<String> regiones; // "EU", "US", "ASIA", regiones en las que se ubican los servidores
 
-    @ElementCollection
-    @CollectionTable(name = "pool_monedas", joinColumns = @JoinColumn(name = "pool_id"))
-    @Column(name = "moneda")
-    @NotEmpty
-    private List<String> monedas; // "BTC", "XMR", monedas con las que la pool opera
+    @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PoolMonedaComision> detallesMonedaComision = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "pool_algoritmos", joinColumns = @JoinColumn(name = "pool_id"))
-    @Column(name = "algoritmo")
-    @NotEmpty
-    private List<String> algoritmos; // "SHA-256", "RandomX", algoritmos soportados
+    private String hashrateSlug; // identificador en hashrate.no
 
     public Pool(){
     }
 
-    public Pool(String nombre, Double comision, Set<EsquemaDePago> esquemaDePago,
-        List<String> regiones, List<String> monedas, List<String> algoritmos) {
+    public Pool(String nombre, Set<EsquemaDePago> esquemaDePago,
+        List<String> regiones, String hashrateSlug) {
         this.nombre = nombre;
-        this.comision = comision;
         this.esquemaDePago = esquemaDePago;
         this.regiones = regiones;
-        this.monedas = monedas;
-        this.algoritmos = algoritmos;
+        this.hashrateSlug = hashrateSlug;
+    }
+
+    public String getHashrateSlug() {
+        return hashrateSlug;
+    }
+
+    public void setHashrateSlug(String hashrateSlug) {
+        this.hashrateSlug = hashrateSlug;
     }
 
     public Long getId() {
@@ -100,14 +96,6 @@ public class Pool {
         this.nombre = nombre;
     }
 
-    public Double getComision() {
-        return comision;
-    }
-
-    public void setComision(Double comision) {
-        this.comision = comision;
-    }
-
     public Set<EsquemaDePago> getEsquemaDePago() {
         return esquemaDePago;
     }
@@ -124,20 +112,17 @@ public class Pool {
         this.regiones = regiones;
     }
 
-    public List<String> getMonedas() {
-        return monedas;
+    public List<PoolMonedaComision> getDetallesMonedaComision() {
+        return detallesMonedaComision;
     }
 
-    public void setMonedas(List<String> monedas) {
-        this.monedas = monedas;
+    public void setDetallesMonedaComision(List<PoolMonedaComision> detallesMonedaComision) {
+        this.detallesMonedaComision = detallesMonedaComision;
     }
 
-    public List<String> getAlgoritmos() {
-        return algoritmos;
-    }
-
-    public void setAlgoritmos(List<String> algoritmos) {
-        this.algoritmos = algoritmos;
+    public void addDetalleMonedaComision(PoolMonedaComision detalle) {
+        this.detallesMonedaComision.add(detalle);
+        detalle.setPool(this);
     }
 
     
