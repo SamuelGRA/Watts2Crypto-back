@@ -17,8 +17,6 @@ import com.watts2crypto.watts2crypto_backend.models.PoolMonedaComision;
 import com.watts2crypto.watts2crypto_backend.repositories.PoolMonedaComisionRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.PoolRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class PoolService {
 
@@ -30,14 +28,10 @@ public class PoolService {
         this.poolMonedaComisionRepository = poolMonedaComisionRepository;
     }
 
-    @PostConstruct
-    public void cargarPools() {
+    public void refreshPools() {
         try {
-            // Solo hace scraping si no hay datos de pool-moneda-comision cargados (porque
-            // pools siempre va a haber)
-            if (poolMonedaComisionRepository.count() == 0) {
-                scrapearPoolsHashrateNo();
-            }
+            poolMonedaComisionRepository.deleteAll();
+            scrapearPoolsHashrateNo();
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {

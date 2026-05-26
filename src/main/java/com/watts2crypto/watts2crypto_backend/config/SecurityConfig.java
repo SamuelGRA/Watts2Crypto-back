@@ -1,6 +1,7 @@
 package com.watts2crypto.watts2crypto_backend.config;
 
 import java.util.List;
+import java.util.Map; //Warning para que vuelvas, aquí tienes que autorizar al servicio web de vercel
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +30,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
+    @Bean //Supongo que aqui añades la url del servicio web de vercel, no sé si arriba habrá que poner algo
+    // más, igual hay que añadir el de render también
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));

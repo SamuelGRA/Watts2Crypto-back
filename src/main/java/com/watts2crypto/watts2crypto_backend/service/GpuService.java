@@ -25,8 +25,6 @@ import com.watts2crypto.watts2crypto_backend.models.Gpu;
 import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
 import com.watts2crypto.watts2crypto_backend.repositories.GpuRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class GpuService {
 
@@ -42,11 +40,7 @@ public class GpuService {
         this.key = key;
     }
 
-    @PostConstruct // Sustituir por scheduled
-    public void initGpus() {
-        if (repository.count() > 0) {
-            return;
-        }
+    public void refreshGpus() {
         List<Gpu> listaGpus = cargarGpusDeWhatToMine();
         repository.deleteAll(); // Borra todos los datos anteriores para mantenerse al día con lo que llega de
                                 // la API y evitar problemas de unicidad

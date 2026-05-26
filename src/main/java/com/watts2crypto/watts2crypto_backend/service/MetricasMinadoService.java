@@ -26,8 +26,6 @@ import com.watts2crypto.watts2crypto_backend.models.MetricasMinado;
 import com.watts2crypto.watts2crypto_backend.repositories.CriptomonedaRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.MetricasMinadoRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 @DependsOn("criptomonedaService") //MetricasMinado depende de datos de Criptomonedas
 public class MetricasMinadoService {
@@ -50,13 +48,10 @@ public class MetricasMinadoService {
         this.key = key;
     }
 
-    @PostConstruct // Sustituir por scheduled
-    public void initMetricasMinado() {
-        if (repository.count() == 0) {
-            List<MetricasMinado> metricas = cargarMetricasMinadoDeWhatToMine();
-            repository.deleteAll();
-            repository.saveAll(metricas);
-        }
+    public void refreshMetricasMinado() {
+        List<MetricasMinado> metricas = cargarMetricasMinadoDeWhatToMine();
+        repository.deleteAll();
+        repository.saveAll(metricas);
     }
 
     private List<MetricasMinado> cargarMetricasMinadoDeWhatToMine() {

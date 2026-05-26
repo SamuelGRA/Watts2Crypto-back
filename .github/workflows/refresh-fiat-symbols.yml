@@ -1,0 +1,27 @@
+name: Refresh Fiat Symbols Data
+
+on:
+  schedule:
+    - cron: '0 4 15 * *'
+      timezone: "Europe/Madrid"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-fiat-symbols:
+    name: Refresh fiat symbols data
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RENDER_WEB_SERVICE_URL: ${{ vars.RENDER_WEB_SERVICE_URL }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      ENDPOINT: fiat/symbols
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run refresh
+        shell: bash
+        run: bash .github/scripts/refresh-endpoint.sh
