@@ -12,7 +12,6 @@ import java.util.Set;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,8 +22,6 @@ import com.watts2crypto.watts2crypto_backend.models.MonedaTradicional;
 import com.watts2crypto.watts2crypto_backend.models.SimbolosISOMonedas;
 import com.watts2crypto.watts2crypto_backend.repositories.MonedaTradicionalRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.SimbolosISOMonedasRepository;
-
-import jakarta.annotation.PostConstruct;
 
 @Service
 public class MonedaTradicionalService {
@@ -43,24 +40,19 @@ public class MonedaTradicionalService {
         this.simbolosRepository = simbolosRepository;
     }
 
-    @PostConstruct // Sustituir por scheduled, todos los dias a las 18:00 (dos horas despues de que
-                   // se actualice la API), ojo, la tabla de simbolos metela en otro scheduled y
-                   // que se actualice cada mucho tiempo, porque esa información es muy raro que cambie
-                   // tipo que se actualice una vez al mes por lo menos
-    public void initMonedasTradicionales() {
-        if (repository.count() == 0) {
-            List<MonedaTradicional> listaMonedas = cargarMonedasDeFrankfurter();
-            repository.deleteAll();
-            repository.saveAll(listaMonedas);
-        }
+    public void refreshMonedasTradicionales() {
+        List<MonedaTradicional> listaMonedas = cargarMonedasDeFrankfurter();
+        repository.deleteAll();
+        repository.saveAll(listaMonedas);
+    }
 
-        if (simbolosRepository.count() == 0) {
-            List<String> symbolsFromApi = cargarSymbolsDesdeFrankfurter();
-            List<SimbolosISOMonedas> entities = symbolsFromApi.stream()
-                    .map(SimbolosISOMonedas::new)
-                    .toList();
-            simbolosRepository.saveAll(entities);
-        }
+    public void refreshSymbols() {
+        List<String> symbolsFromApi = cargarSymbolsDesdeFrankfurter();
+        simbolosRepository.deleteAll();
+        List<SimbolosISOMonedas> entities = symbolsFromApi.stream()
+                .map(SimbolosISOMonedas::new)
+                .toList();
+        simbolosRepository.saveAll(entities);
     }
 
     private List<MonedaTradicional> cargarMonedasDeFrankfurter() {

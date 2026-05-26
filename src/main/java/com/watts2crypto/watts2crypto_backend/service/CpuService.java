@@ -1,7 +1,6 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.watts2crypto.watts2crypto_backend.models.Cpu;
 import com.watts2crypto.watts2crypto_backend.repositories.CpuRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class CpuService {
 
@@ -31,25 +28,16 @@ public class CpuService {
 
     private static final String HASHRATE_NO_URL = "https://www.hashrate.no/coins/XMR/benchmarks";
 
-    @PostConstruct // Se ejecuta al arrancar la aplicación, esto hay que sustituirlo por scheduled
-                   // en algún momento, dejo warning para volver
-    public void cargarCpus() {
+    public void refreshCpus() {
+        repository.deleteAll();
         try {
-            if (repository.count() == 0) {
-                scrapearHashrateNo();
-            }
+            scrapearHashrateNo();
         } catch (ResponseStatusException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-
     }
-
-    // Esto es a más largo plazo, si desplegamos la aplicacion y demás, ejecutaría
-    // la funcion de actualizar cpu en el momento que se indique
-    // @Scheduled(cron = "0 0 3 1,16 * *") // días 1 y 16 de cada mes, a las 3 AM
-    // public void actualizarCpu() {}
 
     private void scrapearHashrateNo() throws IOException {
         Document doc = Jsoup.connect(HASHRATE_NO_URL)

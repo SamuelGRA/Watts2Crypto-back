@@ -25,8 +25,6 @@ import com.watts2crypto.watts2crypto_backend.models.Asic;
 import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
 import com.watts2crypto.watts2crypto_backend.repositories.AsicRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class AsicService {
 
@@ -34,8 +32,6 @@ public class AsicService {
     private final RestTemplate restTemplate;
     private final String key;
 
-    // Así se puede inyectar la key de las APIs (la forma mas sencilla que he
-    // encontrado)
     public AsicService(AsicRepository repository, RestTemplate restTemplate,
             @Value("${whattomine.api.key}") String key) {
         this.repository = repository;
@@ -43,11 +39,7 @@ public class AsicService {
         this.key = key;
     }
 
-    @PostConstruct // Sustituir por scheduled
-    public void initAsics() {
-        if (repository.count() > 0) {
-            return;
-        }
+    public void refreshAsics() {
         List<Asic> listaAsics = cargarAsicsDeWhatToMine();
         repository.deleteAll();
         repository.saveAll(listaAsics);

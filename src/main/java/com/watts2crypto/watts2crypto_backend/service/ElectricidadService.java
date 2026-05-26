@@ -26,8 +26,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.watts2crypto.watts2crypto_backend.models.Electricidad;
 import com.watts2crypto.watts2crypto_backend.repositories.ElectricidadRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class ElectricidadService {
 
@@ -54,12 +52,7 @@ public class ElectricidadService {
 		this.restTemplate = restTemplate;
 	}
 
-	@PostConstruct //Cambiar por shceduled
-	public void initElectricidad() {
-		if (repository.count() > 0) {
-			return;
-		}
-
+	public void refreshElectricidad() {
 		List<Electricidad> precios = cargarElectricidadDeEnergyCharts();
 		repository.deleteAll();
 		repository.saveAll(precios);

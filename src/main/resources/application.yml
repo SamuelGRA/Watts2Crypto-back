@@ -5,3 +5,6 @@ whattomine:
 coincap:
   api:
     key: ${COINCAP_KEY:}
+
+refresh:
+  token: ${REFRESH_TOKEN:}

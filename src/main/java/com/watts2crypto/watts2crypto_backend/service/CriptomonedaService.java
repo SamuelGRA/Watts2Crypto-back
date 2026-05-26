@@ -28,8 +28,6 @@ import com.watts2crypto.watts2crypto_backend.models.CriptomonedaPrecio;
 import com.watts2crypto.watts2crypto_backend.repositories.CriptomonedaPrecioRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.CriptomonedaRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class CriptomonedaService {
 
@@ -56,14 +54,7 @@ public class CriptomonedaService {
         this.key = key;
     }
 
-    @PostConstruct // Cambiar por scheduled, OJO: esta carga depende de las tasas de cambio, con lo
-                   // cual se tiene que hace forzosamente
-    // después de la carga de monedas tradicionales, para que los valores estén
-    // actualizados
-    public void initCriptomonedas() {
-        if (repository.count() > 0) {
-            return;
-        }
+    public void refreshCriptomonedas() {
 
         // Carga metadatos de todas las monedas disponibles
         List<Criptomoneda> metadatos = cargarMetadatosDeCoinCap();

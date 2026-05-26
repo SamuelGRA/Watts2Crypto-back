@@ -37,3 +37,6 @@ data/
 
 ### Env variables ###
 .env
+
+# Developer refresh script
+/scripts/refresh-local.ps1

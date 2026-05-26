@@ -17,8 +17,6 @@ import com.watts2crypto.watts2crypto_backend.models.SoftwareAlgoritmoMoneda;
 import com.watts2crypto.watts2crypto_backend.repositories.SoftwareAlgoritmoMonedaRepository;
 import com.watts2crypto.watts2crypto_backend.repositories.SoftwareRepository;
 
-import jakarta.annotation.PostConstruct;
-
 @Service
 public class SoftwareService {
 
@@ -31,13 +29,10 @@ public class SoftwareService {
         this.softwareAlgoritmoMonedaRepository = softwareAlgoritmoMonedaRepository;
     }
 
-    @PostConstruct //Cambiar por scheduled
-    public void cargarSoftwares() {
+    public void refreshSoftware() {
         try {
-            // Solo hace scraping si no hay datos de algoritmo-moneda cargados (porque de softwares siempre va a haber)
-            if (softwareAlgoritmoMonedaRepository.count() == 0) {
-                scrapearSoftwaresHashrateNo();
-            }
+            softwareAlgoritmoMonedaRepository.deleteAll();
+            scrapearSoftwaresHashrateNo();
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
