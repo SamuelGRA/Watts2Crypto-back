@@ -1,0 +1,14 @@
+.git*
+.gitignore
+.idea
+.vscode
+.DS_Store
+README*
+HELP*
+target
+.mvn
+node_modules
+coverage
+.env
+.env.*
+*.log
