@@ -34,8 +34,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean //Supongo que aqui añades la url del servicio web de vercel, no sé si arriba habrá que poner algo
-    // más, igual hay que añadir el de render también
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
