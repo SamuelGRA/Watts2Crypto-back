@@ -1,7 +1,5 @@
 name: Refresh Fiat Data
 
-name: Refresh Fiat Data
-
 on:
   schedule:
     - cron: '0 3 * * *'
