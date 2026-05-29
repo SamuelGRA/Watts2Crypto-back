@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -35,6 +36,9 @@ public class ElectricidadService {
 	private final RestTemplate restTemplate;
 
 	private static final String energyChartsBaseUrl = "https://api.energy-charts.info/price";
+	private static final int MAX_INTENTOS_POR_ZONA = 5;
+	private static final long RETARDO_BASE_MS = 2_000L;
+	private static final long RETARDO_ENTRE_ZONAS_MS = 750L;
 	private static final List<String> zonasSoportadas = List.of(
 			"AT", "BE", "BG", "CH", "CZ", "DE-LU", "DE-AT-LU",
 			"DK1", "DK2", "EE", "ES", "FI", "FR", "GR", "HR", "HU",
@@ -66,6 +70,7 @@ public class ElectricidadService {
 				try {
 					String body = llamarApiEnergyCharts(zona);
 					res.addAll(parsearElectricidadDeEnergyCharts(body, zona));
+					dormirEntreZonas();
 				} catch (Exception e) {
 					if (e.getMessage().toLowerCase().contains("goaway")) {
 						System.err.println("Error transitorio cargando zona " + zona + ": " + e.getMessage());
@@ -100,8 +105,7 @@ public class ElectricidadService {
 				+ "&start=" + start
 				+ "&end=" + end;
 
-		int maxIntentos = 3;
-		for (int intento = 1; intento <= maxIntentos; intento++) {
+		for (int intento = 1; intento <= MAX_INTENTOS_POR_ZONA; intento++) {
 			try {
 				ResponseEntity<String> response = restTemplate.exchange(
 						url,
@@ -109,9 +113,16 @@ public class ElectricidadService {
 						entity,
 						String.class);
 				return response.getBody();
+			} catch (HttpStatusCodeException e) {
+				if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && intento < MAX_INTENTOS_POR_ZONA) {
+					dormirAntesDeReintentar(intento);
+					continue;
+				}
+				throw e;
 			} catch (Exception e) {
 				boolean transitorio = e.getMessage().toLowerCase().contains("goaway");
-				if (transitorio && intento < maxIntentos) {
+				if (transitorio && intento < MAX_INTENTOS_POR_ZONA) {
+					dormirAntesDeReintentar(intento);
 					continue;
 				}
 				throw e;
@@ -120,6 +131,25 @@ public class ElectricidadService {
 
 		throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
 				"No se pudo completar la llamada a Energy-Charts para la zona " + zona);
+	}
+
+	private void dormirAntesDeReintentar(int intento) {
+		long esperaMs = RETARDO_BASE_MS * intento;
+		try {
+			Thread.sleep(esperaMs);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrumpido esperando para reintentar Energy-Charts", e);
+		}
+	}
+
+	private void dormirEntreZonas() {
+		try {
+			Thread.sleep(RETARDO_ENTRE_ZONAS_MS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrumpido esperando entre peticiones a Energy-Charts", e);
+		}
 	}
 
 	public List<Electricidad> findElectricidadDirectaPorZona(String zona) {
