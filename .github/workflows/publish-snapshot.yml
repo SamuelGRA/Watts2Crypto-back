@@ -1,0 +1,53 @@
+name: Publish Daily Snapshot
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+      timezone: "Europe/Madrid"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-snapshot:
+    name: Publish daily snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RENDER_WEB_SERVICE_URL: ${{ vars.RENDER_WEB_SERVICE_URL }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      SNAPSHOT_TAG: snapshot-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepare snapshot file name
+        shell: bash
+        run: |
+          SNAPSHOT_DATE="$(date -u '+%Y-%m-%d')"
+          echo "SNAPSHOT_DATE=$SNAPSHOT_DATE" >> "$GITHUB_ENV"
+          echo "SNAPSHOT_FILE=watts2crypto-snapshot-${SNAPSHOT_DATE}.sql" >> "$GITHUB_ENV"
+
+      - name: Export snapshot from Render
+        shell: bash
+        run: bash .github/scripts/export-snapshot.sh
+
+      - name: Remove previous snapshot release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view "$SNAPSHOT_TAG" >/dev/null 2>&1; then
+            gh release delete "$SNAPSHOT_TAG" --yes --cleanup-tag
+          fi
+
+      - name: Create snapshot release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          RELEASE_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          gh release create "$SNAPSHOT_TAG" "$SNAPSHOT_FILE" \
+            --title "Snapshot diaria de Watts2Crypto (${SNAPSHOT_DATE})" \
+            --notes "Snapshot generada automáticamente el ${RELEASE_DATE}."
