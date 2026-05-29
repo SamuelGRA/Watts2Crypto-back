@@ -7,11 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler { //Devuelve todas excepciones de forma estandarizada
+	private static final String NOT_FOUND_MESSAGE = "La ruta solicitada no existe.";
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex, HttpServletRequest request) {
@@ -23,6 +25,20 @@ public class GlobalExceptionHandler { //Devuelve todas excepciones de forma esta
                 status.value(),
                 status.getReasonPhrase(),
                 message,
+                request.getRequestURI());
+
+        return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiError body = new ApiError(
+                Instant.now().toString(),
+                status.value(),
+                status.getReasonPhrase(),
+                NOT_FOUND_MESSAGE,
                 request.getRequestURI());
 
         return ResponseEntity.status(status).body(body);
