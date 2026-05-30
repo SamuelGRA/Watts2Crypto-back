@@ -2,8 +2,7 @@ name: Refresh Fiat Data
 
 on:
   schedule:
-    - cron: '0 3 * * *'
-      timezone: "Europe/Madrid"
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 permissions:

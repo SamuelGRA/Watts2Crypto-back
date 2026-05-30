@@ -2,8 +2,7 @@ name: Refresh Metricas Minado Data
 
 on:
   schedule:
-    - cron: '0 5 * * *'
-      timezone: "Europe/Madrid"
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:

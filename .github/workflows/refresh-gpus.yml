@@ -2,8 +2,7 @@ name: Refresh GPUs Data
 
 on:
   schedule:
-    - cron: '0 4 1,17 * *'
-      timezone: "Europe/Madrid"
+    - cron: '0 2 1,17 * *'
   workflow_dispatch:
 
 permissions:

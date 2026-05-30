@@ -49,6 +49,29 @@ function Get-LatestSnapshotDownloadUrl {
     }
 }
 
+function Invoke-SnapshotImport {
+    param(
+        [string]$ImportUrl,
+        [string]$SnapshotDestination
+    )
+
+    return & curl.exe -sS -X POST $ImportUrl -H 'Accept: application/json' -F "file=@$SnapshotDestination"
+}
+
+function Start-LocalDockerCompose {
+    $backendRoot = Join-Path $PSScriptRoot '..'
+    Push-Location $backendRoot
+    try {
+        & docker compose up -d --build
+        if ($LASTEXITCODE -ne 0) {
+            throw 'No se pudo ejecutar docker compose up -d --build. Comprueba que docker desktop está ejecutándose si estás en Windows'
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 $RepositorySlug = Resolve-RepositorySlug -ExplicitSlug $RepositorySlug
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
@@ -65,9 +88,40 @@ Write-Host "Snapshot descargada en $destination"
 Write-Host 'Importando snapshot en la base de datos local...'
 
 $importUrl = "$ApiBaseUrl/api/snapshot/import"
-$response = & curl.exe -sS -X POST $importUrl -H 'Accept: application/json' -F "file=@$destination"
+$response = Invoke-SnapshotImport -ImportUrl $importUrl -SnapshotDestination $destination
 
 if ($LASTEXITCODE -ne 0) {
+    if ($LASTEXITCODE -eq 7) {
+        Write-Warning 'La snapshot se ha descargado en data/snapshots, pero la app no estaba ejecutándose.'
+        $decision = Read-Host '¿Quieres arrancar la app (esto ejecutará docker compose up -d --build) y reintentar la importación? (S/n)'
+        if ($decision -match '^(n|no)$') {
+            Write-Warning 'No se ha levantado la app. La snapshot queda descargada en data/snapshots y puedes importarla más tarde ejecutando este script.'
+            exit 0
+        }
+
+        Start-LocalDockerCompose
+        Write-Host 'Docker Compose se ha levantado. Reintentando la importación de la snapshot...'
+
+        $retries = 1
+        $maxRetries = 5
+        while ($retries -le $maxRetries) {
+            Start-Sleep -Seconds 2
+            $response = Invoke-SnapshotImport -ImportUrl $importUrl -SnapshotDestination $destination
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host $response
+                exit 0
+            }
+
+            if ($LASTEXITCODE -ne 7) {
+                break
+            }
+
+            $retries++
+        }
+
+        throw 'No se pudo importar la snapshot.'
+    }
+
     throw 'No se pudo importar la snapshot en el backend local.'
 }
 

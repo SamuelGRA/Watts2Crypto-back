@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.watts2crypto.watts2crypto_backend.service.DirectRequestAvailabilityService;
 import com.watts2crypto.watts2crypto_backend.service.MaintenanceStateService;
 
 @RestController
@@ -12,9 +13,12 @@ import com.watts2crypto.watts2crypto_backend.service.MaintenanceStateService;
 public class MaintenanceController {
 
 	private final MaintenanceStateService maintenanceStateService;
+	private final DirectRequestAvailabilityService directRequestAvailabilityService;
 
-	public MaintenanceController(MaintenanceStateService maintenanceStateService) {
+	public MaintenanceController(MaintenanceStateService maintenanceStateService,
+			DirectRequestAvailabilityService directRequestAvailabilityService) {
 		this.maintenanceStateService = maintenanceStateService;
+		this.directRequestAvailabilityService = directRequestAvailabilityService;
 	}
 
 	@GetMapping
@@ -22,12 +26,16 @@ public class MaintenanceController {
 		if (maintenanceStateService.isRefreshing()) {
 			return ResponseEntity.ok(new MaintenanceStatusResponse(
 				true,
-				"Estamos actualizando nuestros datos, intente acceder más tarde"
-				,
-				maintenanceStateService.getActiveRefreshes()
+				"Estamos actualizando nuestros datos, intente acceder más tarde",
+				maintenanceStateService.getActiveRefreshes(),
+				directRequestAvailabilityService.isDirectCryptoAvailable()
 			));
 		}
 
-		return ResponseEntity.ok(new MaintenanceStatusResponse(false, null, maintenanceStateService.getActiveRefreshes()));
+		return ResponseEntity.ok(new MaintenanceStatusResponse(
+			false,
+			null,
+			maintenanceStateService.getActiveRefreshes(),
+			directRequestAvailabilityService.isDirectCryptoAvailable()));
 	}
 }

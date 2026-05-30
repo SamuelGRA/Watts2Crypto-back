@@ -2,8 +2,7 @@ name: Refresh Fiat Symbols Data
 
 on:
   schedule:
-    - cron: '0 4 15 * *'
-      timezone: "Europe/Madrid"
+    - cron: '0 2 15 * *'
   workflow_dispatch:
 
 permissions:
