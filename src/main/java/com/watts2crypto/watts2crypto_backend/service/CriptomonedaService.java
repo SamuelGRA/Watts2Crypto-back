@@ -41,16 +41,19 @@ public class CriptomonedaService {
     private final CriptomonedaPrecioRepository precioRepository;
     private final MonedaTradicionalService monedaTradicionalService;
     private final RestTemplate restTemplate;
+    private final DirectRequestAvailabilityService directRequestAvailabilityService;
     private final String key;
 
     public CriptomonedaService(CriptomonedaRepository repository, CriptomonedaPrecioRepository precioRepository,
             MonedaTradicionalService monedaTradicionalService,
             RestTemplate restTemplate,
+            DirectRequestAvailabilityService directRequestAvailabilityService,
             @Value("${coincap.api.key:}") String key) {
         this.repository = repository;
         this.precioRepository = precioRepository;
         this.monedaTradicionalService = monedaTradicionalService;
         this.restTemplate = restTemplate;
+        this.directRequestAvailabilityService = directRequestAvailabilityService;
         this.key = key;
     }
 
@@ -124,6 +127,7 @@ public class CriptomonedaService {
     }
 
     public Criptomoneda findCriptomonedaDirectaPorAssetId(String assetId) {
+		directRequestAvailabilityService.assertDirectCryptoAvailable();
         try {
             JsonNode root = llamarApiAsset(assetId);
             JsonNode data = root.path("data");
@@ -148,6 +152,7 @@ public class CriptomonedaService {
     }
 
     public List<CriptomonedaPrecio> findHistoricoDirectoPorSimbolo(String simbolo) {
+		directRequestAvailabilityService.assertDirectCryptoAvailable();
         try {
             String assetId = repository.findAssetIdBySymbol(simbolo);
             JsonNode asset = llamarApiAsset(assetId).path("data");

@@ -2,8 +2,7 @@ name: Publish Daily Snapshot
 
 on:
   schedule:
-    - cron: '0 6 * * *'
-      timezone: "Europe/Madrid"
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
