@@ -185,7 +185,7 @@ public class RefreshController {
 
 		if (!refreshDataToken.equals(tokenProporcionado)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-					"No autorizado para ejecutar este refresco.");
+					"No autorizado para ejecutar esta actualización.");
 		}
 	}
 
