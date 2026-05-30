@@ -51,7 +51,7 @@ public class SnapshotService {
 
 		for (TableSnapshot table : tables) {
 			writer.write("TRUNCATE TABLE ");
-			writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
+			writer.write(quoteIdentifier(table.tableName()));
 			writer.write(";\n");
 		}
 
@@ -83,7 +83,7 @@ public class SnapshotService {
 
 	private void writeTableRows(Writer writer, TableSnapshot table) throws SQLException, IOException {
 		try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery("SELECT * FROM " + quoteQualifiedIdentifier(table.schemaName(), table.tableName()))) {
+				ResultSet resultSet = statement.executeQuery("SELECT * FROM " + quoteIdentifier(table.tableName()))) {
 
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			int columnCount = metaData.getColumnCount();
@@ -94,7 +94,7 @@ public class SnapshotService {
 
 			while (resultSet.next()) {
 				writer.write("INSERT INTO ");
-				writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
+				writer.write(quoteIdentifier(table.tableName()));
 				writer.write(" (");
 				writer.write(String.join(", ", columnNames));
 				writer.write(") VALUES (");
@@ -114,12 +114,12 @@ public class SnapshotService {
 	private void writeIdentityResets(Writer writer, TableSnapshot table) throws SQLException, IOException {
 		for (String identityColumn : table.identityColumns()) {
 			Long maxValue = jdbcTemplate.queryForObject(
-					"SELECT MAX(" + quoteIdentifier(identityColumn) + ") FROM " + quoteQualifiedIdentifier(table.schemaName(), table.tableName()),
+					"SELECT MAX(" + quoteIdentifier(identityColumn) + ") FROM " + quoteIdentifier(table.tableName()),
 					Long.class);
 
 			if (maxValue != null) {
 				writer.write("ALTER TABLE ");
-				writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
+				writer.write(quoteIdentifier(table.tableName()));
 				writer.write(" ALTER COLUMN ");
 				writer.write(quoteIdentifier(identityColumn));
 				writer.write(" RESTART WITH ");
@@ -138,7 +138,7 @@ public class SnapshotService {
 				while (resultSet.next()) {
 					String schemaName = resultSet.getString("TABLE_SCHEM");
 					String tableName = resultSet.getString("TABLE_NAME");
-					if (!isExportableSchema(schemaName) || tableName == null || tableName.startsWith("SYSTEM_") || tableName.startsWith("INFORMATION_SCHEMA")) {
+					if (!isApplicationSchema(schemaName) || tableName == null || tableName.startsWith("SYSTEM_") || tableName.startsWith("INFORMATION_SCHEMA")) {
 						continue;
 					}
 
@@ -164,18 +164,13 @@ public class SnapshotService {
 		return identityColumns;
 	}
 
-	private boolean isExportableSchema(String schemaName) {
+	private boolean isApplicationSchema(String schemaName) {
 		if (schemaName == null) {
 			return false;
 		}
 
 		String normalizedSchema = schemaName.trim();
-		return !normalizedSchema.isEmpty()
-				&& !"INFORMATION_SCHEMA".equalsIgnoreCase(normalizedSchema)
-				&& !"PG_CATALOG".equalsIgnoreCase(normalizedSchema)
-				&& !"SYS".equalsIgnoreCase(normalizedSchema)
-				&& !"SYSTEM_LOBS".equalsIgnoreCase(normalizedSchema)
-				&& !normalizedSchema.startsWith("SYSTEM_");
+		return !normalizedSchema.isEmpty() && "PUBLIC".equalsIgnoreCase(normalizedSchema);
 	}
 
 	private String formatLiteral(Object value) {
@@ -224,10 +219,6 @@ public class SnapshotService {
 
 	private String quoteIdentifier(String identifier) {
 		return '"' + identifier.replace("\"", "\"\"") + '"';
-	}
-
-	private String quoteQualifiedIdentifier(String schemaName, String tableName) {
-		return quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
 	}
 
 	private record TableSnapshot(String schemaName, String tableName, List<String> identityColumns) {
