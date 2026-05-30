@@ -71,7 +71,7 @@ public class SnapshotController {
 			snapshotService.importSnapshot(file);
 			return ResponseEntity.status(HttpStatus.OK).body(Map.of(
 					"status", "ok",
-					"message", "Snapshot importada correctamente. Reinicia la app para actualizar los datos."));
+					"message", "Snapshot importada correctamente. Ejecuta 'docker compose restart' para reiniciar la app."));
 		} catch (java.sql.SQLException ex) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo importar la snapshot.", ex);
 		}
@@ -97,7 +97,7 @@ public class SnapshotController {
 
 		if (!refreshDataToken.equals(tokenProporcionado)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-					"No autorizado para exportar la snapshot.");
+					"No autorizado para exportar snapshots.");
 		}
 	}
 
