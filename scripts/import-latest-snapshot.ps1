@@ -6,6 +6,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = $utf8Encoding
+[Console]::InputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 
 function Resolve-RepositorySlug {
     param([string]$ExplicitSlug)

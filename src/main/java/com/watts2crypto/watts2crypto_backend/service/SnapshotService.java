@@ -32,7 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class SnapshotService {
-	private static final String PUBLIC_SCHEMA = "PUBLIC";
 	private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
 	private static final DateTimeFormatter OFFSET_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -52,7 +51,7 @@ public class SnapshotService {
 
 		for (TableSnapshot table : tables) {
 			writer.write("TRUNCATE TABLE ");
-			writer.write(quoteIdentifier(table.tableName()));
+			writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
 			writer.write(";\n");
 		}
 
@@ -84,7 +83,7 @@ public class SnapshotService {
 
 	private void writeTableRows(Writer writer, TableSnapshot table) throws SQLException, IOException {
 		try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery("SELECT * FROM " + quoteIdentifier(table.tableName()))) {
+				ResultSet resultSet = statement.executeQuery("SELECT * FROM " + quoteQualifiedIdentifier(table.schemaName(), table.tableName()))) {
 
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			int columnCount = metaData.getColumnCount();
@@ -95,7 +94,7 @@ public class SnapshotService {
 
 			while (resultSet.next()) {
 				writer.write("INSERT INTO ");
-				writer.write(quoteIdentifier(table.tableName()));
+				writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
 				writer.write(" (");
 				writer.write(String.join(", ", columnNames));
 				writer.write(") VALUES (");
@@ -115,12 +114,12 @@ public class SnapshotService {
 	private void writeIdentityResets(Writer writer, TableSnapshot table) throws SQLException, IOException {
 		for (String identityColumn : table.identityColumns()) {
 			Long maxValue = jdbcTemplate.queryForObject(
-					"SELECT MAX(" + quoteIdentifier(identityColumn) + ") FROM " + quoteIdentifier(table.tableName()),
+					"SELECT MAX(" + quoteIdentifier(identityColumn) + ") FROM " + quoteQualifiedIdentifier(table.schemaName(), table.tableName()),
 					Long.class);
 
 			if (maxValue != null) {
 				writer.write("ALTER TABLE ");
-				writer.write(quoteIdentifier(table.tableName()));
+				writer.write(quoteQualifiedIdentifier(table.schemaName(), table.tableName()));
 				writer.write(" ALTER COLUMN ");
 				writer.write(quoteIdentifier(identityColumn));
 				writer.write(" RESTART WITH ");
@@ -135,14 +134,15 @@ public class SnapshotService {
 			DatabaseMetaData metaData = connection.getMetaData();
 			List<TableSnapshot> tables = new ArrayList<>();
 
-			try (ResultSet resultSet = metaData.getTables(null, PUBLIC_SCHEMA, "%", new String[] { "TABLE" })) {
+			try (ResultSet resultSet = metaData.getTables(null, "%", "%", new String[] { "TABLE" })) {
 				while (resultSet.next()) {
+					String schemaName = resultSet.getString("TABLE_SCHEM");
 					String tableName = resultSet.getString("TABLE_NAME");
-					if (tableName == null || tableName.startsWith("SYSTEM_") || tableName.startsWith("INFORMATION_SCHEMA")) {
+					if (!isExportableSchema(schemaName) || tableName == null || tableName.startsWith("SYSTEM_") || tableName.startsWith("INFORMATION_SCHEMA")) {
 						continue;
 					}
 
-					tables.add(new TableSnapshot(tableName, listIdentityColumns(metaData, tableName)));
+					tables.add(new TableSnapshot(schemaName, tableName, listIdentityColumns(metaData, schemaName, tableName)));
 				}
 			}
 
@@ -151,9 +151,9 @@ public class SnapshotService {
 		}
 	}
 
-	private List<String> listIdentityColumns(DatabaseMetaData metaData, String tableName) throws SQLException {
+	private List<String> listIdentityColumns(DatabaseMetaData metaData, String schemaName, String tableName) throws SQLException {
 		List<String> identityColumns = new ArrayList<>();
-		try (ResultSet columns = metaData.getColumns(null, PUBLIC_SCHEMA, tableName, "%")) {
+		try (ResultSet columns = metaData.getColumns(null, schemaName, tableName, "%")) {
 			while (columns.next()) {
 				String isAutoincrement = columns.getString("IS_AUTOINCREMENT");
 				if ("YES".equalsIgnoreCase(isAutoincrement)) {
@@ -162,6 +162,20 @@ public class SnapshotService {
 			}
 		}
 		return identityColumns;
+	}
+
+	private boolean isExportableSchema(String schemaName) {
+		if (schemaName == null) {
+			return false;
+		}
+
+		String normalizedSchema = schemaName.trim();
+		return !normalizedSchema.isEmpty()
+				&& !"INFORMATION_SCHEMA".equalsIgnoreCase(normalizedSchema)
+				&& !"PG_CATALOG".equalsIgnoreCase(normalizedSchema)
+				&& !"SYS".equalsIgnoreCase(normalizedSchema)
+				&& !"SYSTEM_LOBS".equalsIgnoreCase(normalizedSchema)
+				&& !normalizedSchema.startsWith("SYSTEM_");
 	}
 
 	private String formatLiteral(Object value) {
@@ -212,6 +226,10 @@ public class SnapshotService {
 		return '"' + identifier.replace("\"", "\"\"") + '"';
 	}
 
-	private record TableSnapshot(String tableName, List<String> identityColumns) {
+	private String quoteQualifiedIdentifier(String schemaName, String tableName) {
+		return quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
+	}
+
+	private record TableSnapshot(String schemaName, String tableName, List<String> identityColumns) {
 	}
 }
