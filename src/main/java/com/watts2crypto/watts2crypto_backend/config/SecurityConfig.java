@@ -1,21 +1,26 @@
 package com.watts2crypto.watts2crypto_backend.config;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 public class SecurityConfig {
-    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:}")
     private String allowedOrigins;
+
+    @Value("${app.cors.allowed-local-hosts:localhost,127.0.0.1,::1}")
+    private String allowedHosts;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,17 +41,58 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
-            .map(String::trim)
-            .filter(origin -> !origin.isEmpty())
-            .toList());
-        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        return new CorsConfigurationSource() {
+            @Override
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                String origin = request.getHeader("Origin");
+                if (origin == null || origin.isBlank()) {
+                    return null;
+                }
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+                if (!isAllowedExactOrigin(origin) && !isAllowedLocalOrigin(origin)) {
+                    return null;
+                }
+
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(List.of(origin));
+                configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("*"));
+                configuration.setAllowCredentials(true);
+                return configuration;
+            }
+        };
+    }
+
+    private boolean isAllowedExactOrigin(String origin) {
+        return Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(allowedOrigin -> !allowedOrigin.isEmpty())
+                .anyMatch(allowedOrigin -> allowedOrigin.equalsIgnoreCase(origin));
+    }
+
+    private boolean isAllowedLocalOrigin(String origin) {
+        try {
+            URI originUri = URI.create(origin);
+            String host = originUri.getHost();
+            if (host == null || originUri.getPort() < 0) {
+                return false;
+            }
+
+            return Arrays.stream(allowedHosts.split(","))
+                    .map(String::trim)
+                    .map(SecurityConfig::normalizeHost)
+                    .filter(allowedHost -> !allowedHost.isEmpty())
+                    .anyMatch(allowedHost -> allowedHost.equalsIgnoreCase(normalizeHost(host)));
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private static String normalizeHost(String host) {
+        String normalized = host.trim();
+        if (normalized.startsWith("[") && normalized.endsWith("]")) {
+            return normalized.substring(1, normalized.length() - 1);
+        }
+        return normalized;
     }
 }
