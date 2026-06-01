@@ -18,7 +18,7 @@ El backend expone la API REST que consume el frontend y se encarga de:
 
 Este repositorio debe usarse junto con el frontend, si se pretende desplegar la app localmente:
 
-- [Watts2Crypto-front](../Watts2Crypto-front)
+- [Watts2Crypto-front](https://github.com/SamuelGRA/Watts2Crypto-front)
 
 Lo más cómodo es tener ambos repositorios en una misma carpeta padre:
 
@@ -35,6 +35,7 @@ watts2crypto/
 Esta es la forma recomendada para probar la aplicación completa en local.
 
 ```bash
+cd watts2crypto-back
 docker compose up -d --build
 ```
 
