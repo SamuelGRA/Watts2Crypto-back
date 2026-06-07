@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,9 +24,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.watts2crypto.watts2crypto_backend.models.Electricidad;
 import com.watts2crypto.watts2crypto_backend.repositories.ElectricidadRepository;
@@ -41,6 +42,38 @@ class ElectricidadServiceTest {
 
     @InjectMocks
     private ElectricidadService service;
+
+    @Test
+    void loadElectrictyBuildsAndSavesData() {
+
+        long first = Instant.parse("2026-05-30T00:00:00Z").getEpochSecond();
+        long second = Instant.parse("2026-05-31T00:00:00Z").getEpochSecond();
+
+        String body = """
+                {
+                  "unix": [%d, %d],
+                  "price": [100.0, 200.0]
+                }
+                """.formatted(first, second);
+
+        AtomicInteger llamadas = new AtomicInteger();
+
+        when(restTemplate.exchange(
+                anyString(),
+                eq(HttpMethod.GET),
+                any(org.springframework.http.HttpEntity.class),
+                eq(String.class)))
+                .thenAnswer(invocation -> {
+                    if (llamadas.incrementAndGet() > 1) {
+                        throw new RuntimeException("STOP_TEST");
+                    }
+                    return ResponseEntity.ok(body);
+                });
+
+        assertThrows(ResponseStatusException.class,
+                () -> service.refreshElectricidad());
+
+    }
 
     @Test
     void findElectricidadDirectaPorZonaParsesAndSortsResults() {
@@ -171,7 +204,8 @@ class ElectricidadServiceTest {
         when(repository.findByDateRange(eq("ES"), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(List.of(electricidad));
 
-        assertEquals(1, service.findByDateRangeAndZone("ES", LocalDateTime.now().minusDays(1), LocalDateTime.now()).size());
+        assertEquals(1,
+                service.findByDateRangeAndZone("ES", LocalDateTime.now().minusDays(1), LocalDateTime.now()).size());
     }
 
     @Test

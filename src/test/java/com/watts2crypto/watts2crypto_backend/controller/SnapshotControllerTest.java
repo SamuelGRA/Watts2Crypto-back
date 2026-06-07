@@ -61,6 +61,19 @@ class SnapshotControllerTest {
     }
 
     @Test
+    void exportsSnapshotWhenBearerTokenMatches() throws Exception {
+        doAnswer(invocation -> {
+            Writer writer = invocation.getArgument(0);
+            writer.write("snapshot-content");
+            return null;
+        }).when(snapshotService).writeSnapshot(any(Writer.class));
+
+        mockMvc.perform(get("/api/snapshot/export").header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk())
+            .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("watts2crypto-snapshot.sql")));
+    }
+
+    @Test
     void importsSnapshotLocally() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "snapshot.sql", "text/plain",
                 "SELECT 1;".getBytes(StandardCharsets.UTF_8));
