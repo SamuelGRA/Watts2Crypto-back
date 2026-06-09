@@ -62,18 +62,24 @@ function Invoke-SnapshotImport {
         [string]$SnapshotDestination
     )
 
+    $client = $null
+    $fileStream = $null
+    $content = $null
+
     try {
         Add-Type -AssemblyName System.Net.Http
 
         $fileName = [System.IO.Path]::GetFileName($SnapshotDestination)
-        $fileBytes = [System.IO.File]::ReadAllBytes($SnapshotDestination)
+
+        $fileStream = [System.IO.File]::OpenRead($SnapshotDestination)
+        $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
+        $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse('application/octet-stream')
 
         $content = New-Object System.Net.Http.MultipartFormDataContent
-        $fileContent = New-Object System.Net.Http.ByteArrayContent(,$fileBytes)
-        $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse('application/octet-stream')
         $content.Add($fileContent, 'file', $fileName)
 
         $client = New-Object System.Net.Http.HttpClient
+        $client.Timeout = [TimeSpan]::FromMinutes(15)
         $client.DefaultRequestHeaders.Accept.Clear()
         $client.DefaultRequestHeaders.Accept.Add(
             [System.Net.Http.Headers.MediaTypeWithQualityHeaderValue]::new('application/json')
@@ -82,26 +88,28 @@ function Invoke-SnapshotImport {
         $result = $client.PostAsync($ImportUrl, $content).GetAwaiter().GetResult()
         $body = $result.Content.ReadAsStringAsync().GetAwaiter().GetResult()
 
-        if (-not $result.IsSuccessStatusCode) {
-            return [pscustomobject]@{
-                Success          = $false
-                ConnectionFailed = $false
-                Response         = $body
-                StatusCode       = [int]$result.StatusCode
-            }
-        }
-
         return [pscustomobject]@{
-            Success          = $true
+            Success          = $result.IsSuccessStatusCode
             ConnectionFailed = $false
+            Timeout          = $false
             Response         = $body
             StatusCode       = [int]$result.StatusCode
+        }
+    }
+    catch [System.Threading.Tasks.TaskCanceledException] {
+        return [pscustomobject]@{
+            Success          = $false
+            ConnectionFailed = $false
+            Timeout          = $true
+            Response         = 'La importación superó el tiempo de espera configurado.'
+            StatusCode       = $null
         }
     }
     catch [System.Net.WebException] {
         return [pscustomobject]@{
             Success          = $false
             ConnectionFailed = $true
+            Timeout          = $false
             Response         = $null
             StatusCode       = $null
         }
@@ -110,9 +118,15 @@ function Invoke-SnapshotImport {
         return [pscustomobject]@{
             Success          = $false
             ConnectionFailed = $true
+            Timeout          = $false
             Response         = $null
             StatusCode       = $null
         }
+    }
+    finally {
+        if ($content)    { $content.Dispose() }
+        if ($fileStream) { $fileStream.Dispose() }
+        if ($client)     { $client.Dispose() }
     }
 }
 
