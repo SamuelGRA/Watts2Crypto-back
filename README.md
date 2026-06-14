@@ -78,7 +78,8 @@ mvn spring-boot:run #Descarga todas las dependencias y arranca la app
 mvn clean install -DskipTests
 ```
 
-La base de datos estará vacía la primera vez que se ejecute la aplicación, para poblarla basta con ejecutar el script `importar-latest-snapshot.ps1`, ubicado en la carpeta `scripts`. Para más información, ve a [importación de snapshots](#importar-la-snapshot-en-local).
+La base de datos estará vacía la primera vez que se ejecute la aplicación, para poblarla basta con ejecutar el script `importar-latest-snapshot.ps1`, ubicado en la carpeta `scripts`. **Es importante que esto se haga con el backend arrancado, para que el script detecte que se está usando la base de datos local H2**, tras eso, se debe reiniciar la aplicación. Para más información, ve a [importación de snapshots](#importar-la-snapshot-en-local).
+Cuando se desee actualizar la base de datos, se debe repetir este proceso.
 
 Tras eso, solo quedaría levantar el frontend (instrucciones en el README del otro repositorio). 
 
