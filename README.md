@@ -55,6 +55,12 @@ docker compose restart
 
 Una ventaja importante de usar la aplicación con Docker, aparte de todas las ventajas propias de esta herramienta, es que el backend no sufre de suspensiones por inactividad como ocurre en el despliegue con Render. Además, los datos se pueden mantener actualizados en un entorno local mediante la [importación de snapshots](#importar-la-snapshot-en-local), que se detalla más abajo.
 
+Si se quiere eliminar todo rastro de la aplicación:
+```bash
+docker compose down -v
+#La opción -v hace que también se eliminen los volúmenes de datos del entorno de Docker
+```
+
 ### 2. Uso local sin Docker
 
 #### Prerrequisitos
