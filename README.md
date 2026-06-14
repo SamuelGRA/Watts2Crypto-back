@@ -32,6 +32,9 @@ watts2crypto/
 
 ### 1. Uso local con Docker
 
+#### Prerrequisitos
+- Docker Desktop (Windows/macOS) o Docker Engine + Docker Compose (Linux)
+
 Esta es la forma recomendada para probar la aplicación completa en local.
 
 ```bash
@@ -52,7 +55,28 @@ docker compose restart
 
 Una ventaja importante de usar la aplicación con Docker, aparte de todas las ventajas propias de esta herramienta, es que el backend no sufre de suspensiones por inactividad como ocurre en el despliegue con Render. Además, los datos se pueden mantener actualizados en un entorno local mediante la [importación de snapshots](#importar-la-snapshot-en-local), que se detalla más abajo.
 
-### 2. Despliegue en Render
+### 2. Uso local sin Docker
+
+#### Prerrequisitos
+- JDK 21
+- Maven 3.9+
+- PowerShell (opcional, para importar snapshots automáticamente)
+No es necesario instalar una base de datos externa. En el perfil local la aplicación utiliza una base de datos H2 embebida en memoria por defecto.
+
+Si no dispones de Docker Desktop o no deseas instalarlo, también es posible arrancar la aplicación de forma local sin depender de Docker, el proceso para levantar la app/instalar las dependencias es el siguiente:
+
+```bash
+mvn spring-boot:run #Descarga todas las dependencias y arranca la app
+
+#O, si no se desea arrancar la aplicación directamente:
+mvn clean install -DskipTests
+```
+
+La base de datos estará vacía la primera vez que se ejecute la aplicación, para poblarla basta con ejecutar el script `importar-latest-snapshot.ps1`, ubicado en la carpeta `scripts`. Para más información, ve a [importación de snapshots](#importar-la-snapshot-en-local).
+
+Tras eso, solo quedaría levantar el frontend (instrucciones en el README del otro repositorio). 
+
+### 3. Despliegue en Render
 
 El backend está preparado para desplegarse como Web Service en Render usando el `Dockerfile` de producción.
 
@@ -85,6 +109,13 @@ Después de importar la snapshot, lo recomendable es reiniciar todo el entorno p
 
 ```bash
 docker compose restart
+```
+
+O bien, si se ha levantado la app sin usar Docker:
+
+```bash
+Ctrl+C
+mvn spring-boot:run
 ```
 ## Licencia y uso
 
