@@ -45,7 +45,7 @@ docker compose up -d --build
 Esto levanta:
 
 - Backend en `http://localhost:8080`
-- Brontend en `http://localhost:3000`
+- Frontend en `http://localhost:3000`
 
 Cuando solo quieras reiniciar el entorno después de importar una snapshot o modificar la base de datos:
 
@@ -83,14 +83,13 @@ Cuando se desee actualizar la base de datos, se debe repetir este proceso.
 
 Tras eso, solo quedaría levantar el frontend (instrucciones en el README del otro repositorio). 
 
-### 3. Despliegue en Render
+### 3. Despliegue en Railway
 
-El backend está preparado para desplegarse como Web Service en Render usando el `Dockerfile` de producción.
+El backend está preparado para desplegarse como Web Service en Railway usando el `Dockerfile` de producción.
 
 Notas importantes:
 
-- Render usa el perfil `prod` y conecta contra PostgreSQL/Supabase.
-- La aplicación puede tardar alrededor de un minuto en responder si Render la ha dejado en spin down (esto ocurre cuando no se registra actividad en el backend durante 15 minutos).
+- Railway usa el perfil `prod` y conecta contra PostgreSQL/Supabase.
 - Sin embargo, la app está pensada para acceder desde el [enlace de frontend](#repositorio-relacionado).
 
 ## Snapshot diaria
