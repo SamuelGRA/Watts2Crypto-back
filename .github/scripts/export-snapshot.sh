@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [ -z "${RENDER_WEB_SERVICE_URL:-}" ]; then
-  echo "Missing RENDER_WEB_SERVICE_URL repository variable."
+if [ -z "${RAILWAY_WEB_SERVICE_URL:-}" ]; then
+  echo "Missing RAILWAY_WEB_SERVICE_URL repository variable."
   exit 1
 fi
 
@@ -16,7 +16,7 @@ if [ -z "${SNAPSHOT_FILE:-}" ]; then
   SNAPSHOT_FILE="watts2crypto-snapshot-$(date -u '+%Y-%m-%d').sql"
 fi
 
-BASE_URL="${RENDER_WEB_SERVICE_URL%/}"
+BASE_URL="${RAILWAY_WEB_SERVICE_URL%/}"
 URL="$BASE_URL/api/snapshot/export"
 MAX_ATTEMPTS=8
 ATTEMPT=1
@@ -62,7 +62,7 @@ while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
     exit 1
   fi
 
-  echo "HTTP $HTTP_CODE. Retrying in ${DELAY}s to wait for Render cold start..."
+  echo "HTTP $HTTP_CODE. Retrying in ${DELAY}s to wait for Railway..."
   sleep "$DELAY"
 
   if [ "$DELAY" -lt 60 ]; then
