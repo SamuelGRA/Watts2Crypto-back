@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      RENDER_WEB_SERVICE_URL: ${{ vars.RENDER_WEB_SERVICE_URL }}
+      RAILWAY_WEB_SERVICE_URL: ${{ vars.RAILWAY_WEB_SERVICE_URL }}
       REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
       ENDPOINT: gpus
 

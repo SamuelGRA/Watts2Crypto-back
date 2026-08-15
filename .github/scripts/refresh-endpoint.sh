@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [ -z "${RENDER_WEB_SERVICE_URL:-}" ]; then
-  echo "Missing RENDER_WEB_SERVICE_URL repository variable."
+if [ -z "${RAILWAY_WEB_SERVICE_URL:-}" ]; then
+  echo "Missing RAILWAY_WEB_SERVICE_URL repository variable."
   exit 1
 fi
 
@@ -17,7 +17,7 @@ if [ -z "${ENDPOINT:-}" ]; then
   exit 1
 fi
 
-BASE_URL="${RENDER_WEB_SERVICE_URL%/}"
+BASE_URL="${RAILWAY_WEB_SERVICE_URL%/}"
 URL="$BASE_URL/api/refresh/$ENDPOINT"
 MAX_ATTEMPTS=8
 ATTEMPT=1
@@ -64,7 +64,7 @@ while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
     exit 1
   fi
 
-  echo "HTTP $HTTP_CODE. Retrying in ${DELAY}s to wait for Render cold start..."
+  echo "HTTP $HTTP_CODE. Retrying in ${DELAY}s to wait for Railway..."
   sleep "$DELAY"
 
   if [ "$DELAY" -lt 60 ]; then

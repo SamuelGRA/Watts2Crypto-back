@@ -12,7 +12,7 @@ El backend expone la API REST que consume el frontend y se encarga de:
 - Refrescar datos de criptomonedas, hardware, software, pools, electricidad y monedas tradicionales.
 - Servir el estado de mantenimiento.
 - Exportar e importar snapshots de la base de datos.
-- Alimentar el despliegue local con Docker y el despliegue en Render.
+- Alimentar el despliegue local con Docker y el despliegue en Railway.
 
 ## Repositorio relacionado
 
@@ -53,7 +53,7 @@ Cuando solo quieras reiniciar el entorno después de importar una snapshot o mod
 docker compose restart
 ```
 
-Una ventaja importante de usar la aplicación con Docker, aparte de todas las ventajas propias de esta herramienta, es que el backend no sufre de suspensiones por inactividad como ocurre en el despliegue con Render. Además, los datos se pueden mantener actualizados en un entorno local mediante la [importación de snapshots](#importar-la-snapshot-en-local), que se detalla más abajo.
+Los datos se pueden mantener actualizados en un entorno local mediante la [importación de snapshots](#importar-la-snapshot-en-local), que se detalla más abajo.
 
 Si se quiere eliminar todo rastro de la aplicación:
 ```bash
