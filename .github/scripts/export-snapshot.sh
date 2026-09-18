@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [ -z "${RAILWAY_WEB_SERVICE_URL:-}" ]; then
-  echo "Missing RAILWAY_WEB_SERVICE_URL repository variable."
+if [ -z "${BACKEND_URL:-}" ]; then
+  echo "Missing BACKEND_URL repository secret."
   exit 1
 fi
 
@@ -16,7 +16,7 @@ if [ -z "${SNAPSHOT_FILE:-}" ]; then
   SNAPSHOT_FILE="watts2crypto-snapshot-$(date -u '+%Y-%m-%d').sql"
 fi
 
-BASE_URL="${RAILWAY_WEB_SERVICE_URL%/}"
+BASE_URL="${BACKEND_URL%/}"
 URL="$BASE_URL/api/snapshot/export"
 MAX_ATTEMPTS=8
 ATTEMPT=1
