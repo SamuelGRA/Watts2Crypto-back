@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [ -z "${RAILWAY_WEB_SERVICE_URL:-}" ]; then
-  echo "Missing RAILWAY_WEB_SERVICE_URL repository variable."
+if [ -z "${BACKEND_URL:-}" ]; then
+  echo "Missing BACKEND_URL repository secret."
   exit 1
 fi
 
@@ -17,7 +17,7 @@ if [ -z "${ENDPOINT:-}" ]; then
   exit 1
 fi
 
-BASE_URL="${RAILWAY_WEB_SERVICE_URL%/}"
+BASE_URL="${BACKEND_URL%/}"
 URL="$BASE_URL/api/refresh/$ENDPOINT"
 MAX_ATTEMPTS=8
 ATTEMPT=1

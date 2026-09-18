@@ -1,6 +1,8 @@
 package com.watts2crypto.watts2crypto_backend.controller;
 
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -183,7 +185,9 @@ public class RefreshController {
 			}
 		}
 
-		if (!refreshDataToken.equals(tokenProporcionado)) {
+		//MessageDigest comprueba la igualdad carácter por carácter, pero con una cantidad de tiempo uniforme entre caracteres
+		if (tokenProporcionado == null || !MessageDigest.isEqual(refreshDataToken.getBytes(StandardCharsets.UTF_8), 
+																tokenProporcionado.getBytes(StandardCharsets.UTF_8))) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
 					"No autorizado para ejecutar esta actualización.");
 		}

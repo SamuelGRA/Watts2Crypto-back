@@ -83,14 +83,14 @@ Cuando se desee actualizar la base de datos, se debe repetir este proceso.
 
 Tras eso, solo quedaría levantar el frontend (instrucciones en el README del otro repositorio). 
 
-### 3. Despliegue en Railway
+### 3. Despliegue en producción
 
-El backend está preparado para desplegarse como Web Service en Railway usando el `Dockerfile` de producción.
+El backend está preparado para desplegarse de forma contenerizada usando el `Dockerfile` de producción.
 
 Notas importantes:
 
-- Railway usa el perfil `prod` y conecta contra PostgreSQL/Supabase.
-- Sin embargo, la app está pensada para acceder desde el [enlace de frontend](#repositorio-relacionado).
+- La app usa el perfil `prod` y conecta contra PostgreSQL/Supabase.
+- El backend expone una API pensada para ser consumida por el [frontend](#repositorio-relacionado); no está diseñado para acceder directamente desde el navegador.
 
 ## Snapshot diaria
 
@@ -107,7 +107,7 @@ El script `scripts/import-latest-snapshot.ps1` descarga la última snapshot publ
 
 Funcionamiento básico:
 
-1. Desde `watts2crypto-bacl/scripts` ejecuta el único script que hay `importar-latest-snapshot.ps1`, se recomienda hacer esto habiendo levantado previamente la app con Docker.
+1. Desde `watts2crypto-back/scripts` ejecuta el único script que hay `importar-latest-snapshot.ps1`, se recomienda hacer esto habiendo levantado previamente la app con Docker.
 2. Si el backend no está levantado, el propio script puede arrancar Docker Compose y reintentar la importación de la snapshot a la base de datos local.
 3. Si solo se quiere importar la snapshot sin arrancar la app, el mismo script almacena automáticamente las snapshots en `data/snapshots`, que se pueden importar posteriormente cuando se desee ejecutando el script de nuevo.
 
