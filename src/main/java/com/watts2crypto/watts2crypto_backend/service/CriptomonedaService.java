@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,8 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.watts2crypto.watts2crypto_backend.models.Criptomoneda;
 import com.watts2crypto.watts2crypto_backend.models.CriptomonedaPrecio;
 import com.watts2crypto.watts2crypto_backend.repositories.CriptomonedaPrecioRepository;
@@ -139,7 +139,7 @@ public class CriptomonedaService {
             Criptomoneda criptomoneda = construirCriptomonedaDesdeAsset(data);
             CriptomonedaPrecio precioActual = construirPrecioActualDesdeAsset(
                     root.path("timestamp").asLong(Instant.now().toEpochMilli()),
-                    data.path("priceUsd").asText(null),
+                    data.path("priceUsd").asString(null),
                     criptomoneda);
             criptomoneda.addPrecio(precioActual);
 
@@ -207,7 +207,7 @@ public class CriptomonedaService {
                     "Error en la llamada a CoinCap");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         return mapper.readTree(body);
     }
 
@@ -231,7 +231,7 @@ public class CriptomonedaService {
                     "Error en la llamada a CoinCap");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         return mapper.readTree(body);
     }
 
@@ -260,15 +260,15 @@ public class CriptomonedaService {
 
         String body = response.getBody();
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         return mapper.readTree(body);
     }
 
     private Criptomoneda construirCriptomonedaDesdeAsset(JsonNode assetNode) {
         Criptomoneda criptomoneda = new Criptomoneda();
-        criptomoneda.setAssetId(assetNode.path("id").asText());
-        criptomoneda.setSimbolo(assetNode.path("symbol").asText());
-        criptomoneda.setNombre(assetNode.path("name").asText());
+        criptomoneda.setAssetId(assetNode.path("id").asString());
+        criptomoneda.setSimbolo(assetNode.path("symbol").asString());
+        criptomoneda.setNombre(assetNode.path("name").asString());
         return criptomoneda;
     }
 
@@ -283,13 +283,13 @@ public class CriptomonedaService {
     }
 
     private CriptomonedaPrecio construirPrecioDesdeHistorico(JsonNode historyNode, Criptomoneda criptomoneda) {
-        String precioRaw = historyNode.path("priceUsd").asText(null);
+        String precioRaw = historyNode.path("priceUsd").asString(null);
         BigDecimal precioEur = convertirYRedondearPrecioEur(precioRaw);
         if (precioEur == null) {
             return null;
         }
 
-        String date = historyNode.path("date").asText(null);
+        String date = historyNode.path("date").asString(null);
         LocalDate fecha;
         if (date != null && !date.isBlank() && date.contains("T")) {
             fecha = LocalDate.parse(date.split("T")[0]);

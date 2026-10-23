@@ -136,7 +136,7 @@ public class SoftwareService {
     public Software findByName(String nombre) {
         try {
             Optional<Software> res = repository.findByName(nombre);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Software " + nombre + " no encontrado");
             }
             return res.get();

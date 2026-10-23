@@ -98,7 +98,7 @@ public class CpuService {
     public List<String> findAllCpuNames() {
         try {
             Optional<List<String>> res = repository.findAllNames();
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se pudieron obtener los nombres de los procesadores.");
             }
@@ -113,7 +113,7 @@ public class CpuService {
     public Cpu findCpuByName(String name) {
         try {
             Optional<Cpu> res = repository.findByNameIgnoreCase(name);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Procesador " + name + " no encontrado.");
             }

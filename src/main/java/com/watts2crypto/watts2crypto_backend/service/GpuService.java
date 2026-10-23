@@ -1,6 +1,5 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,10 +16,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 import com.watts2crypto.watts2crypto_backend.models.Gpu;
 import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
 import com.watts2crypto.watts2crypto_backend.repositories.GpuRepository;
@@ -66,15 +66,15 @@ public class GpuService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en la llamada a WhatToMine");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         try {
             List<Gpu> res = new ArrayList<>();
             Map<String, LocalDate> nombreYFecha = new HashMap<>();
             ArrayNode root = (ArrayNode) mapper.readTree(body); // la API devuelve un array
 
             for (JsonNode gpuNode : root) {
-                String name = gpuNode.get("name").asText();
-                LocalDate releaseDate = LocalDate.parse(gpuNode.get("release_date").asText());
+                String name = gpuNode.get("name").asString();
+                LocalDate releaseDate = LocalDate.parse(gpuNode.get("release_date").asString());
 
                 // Si hay una gpu repetida en la respuesta de la API, cuya entrada es más
                 // antigua que la gpu que ya se tiene, no se actualiza
@@ -96,9 +96,9 @@ public class GpuService {
                 Integer contadorHashrate = 0;
 
                 for (JsonNode algoNode : algosNode) {
-                    String algoName = algoNode.get("name").asText();
+                    String algoName = algoNode.get("name").asString();
 
-                    Double hashrate = Double.parseDouble(algoNode.get("hashrate").asText());
+                    Double hashrate = Double.parseDouble(algoNode.get("hashrate").asString());
                     Integer power = algoNode.get("power").asInt();
 
                     RendimientoAlgoritmo rendimiento = new RendimientoAlgoritmo();
@@ -120,7 +120,7 @@ public class GpuService {
             }
 
             return res;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Error parseando GPUs de WhatToMine", e);
         }
 
@@ -140,7 +140,7 @@ public class GpuService {
     public Gpu findGpuByName(String nombre) {
         try {
             Optional<Gpu> res = repository.findByNameIgnoreCase(nombre);
-            if(!res.isPresent()) {
+            if(res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Gpu " + nombre + " no encontrada.");
             }
             return res.get();
@@ -154,7 +154,7 @@ public class GpuService {
     public List<String> findAllGpuNames() {
         try {
             Optional<List<String>> res = repository.findAllNames();
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se pudieron obtener los nombres de las tarjetas gráficas.");
             }
@@ -169,7 +169,7 @@ public class GpuService {
     public RendimientoAlgoritmo findHashrateYConsumoPorNombreYAlgoritmo(String nombre, String algoritmo) {
         try {
             Optional<RendimientoAlgoritmo> res = repository.findHashrateAndPowerByGpuAndAlgorithm(nombre, algoritmo);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se encontraron resultados con esos parámetros.");
             }

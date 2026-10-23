@@ -2,7 +2,6 @@ package com.watts2crypto.watts2crypto_backend.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -44,7 +43,6 @@ class PoolServiceTest {
     void refreshPoolsClearsCommissionTableAndSkipsPoolsWithoutSlug() {
         Pool pool = new Pool("Poolin", Set.of(Pool.EsquemaDePago.PPS), List.of("EU"), null);
         when(repository.findAll()).thenReturn(List.of(pool));
-        doNothing().when(poolMonedaComisionRepository).deleteAll();
 
         service.refreshPools();
 
@@ -59,7 +57,6 @@ class PoolServiceTest {
         pool.setId(12L);
         when(repository.findAll()).thenReturn(List.of(pool));
         when(poolMonedaComisionRepository.findByPoolIdAndMoneda(12L, "BTC")).thenReturn(Optional.empty());
-        doNothing().when(poolMonedaComisionRepository).deleteAll();
 
         Document document = Jsoup.parse("<html><body><div class='w3-row estimate'>"
                 + "<span class='brand'>BTC</span>"
@@ -87,7 +84,6 @@ class PoolServiceTest {
         Pool pool = new Pool("Poolin", Set.of(Pool.EsquemaDePago.PPS), List.of("EU"), "poolin");
         pool.setId(12L);
         when(repository.findAll()).thenReturn(List.of(pool));
-        doNothing().when(poolMonedaComisionRepository).deleteAll();
 
         Document document = Jsoup.parse("<html><body>"
                 + "<div class='w3-row estimate'>"
