@@ -17,9 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 import com.watts2crypto.watts2crypto_backend.models.Criptomoneda;
 import com.watts2crypto.watts2crypto_backend.models.DTOs.MonedaAlgoritmosDto;
 import com.watts2crypto.watts2crypto_backend.models.MetricasMinado;
@@ -74,17 +75,17 @@ public class MetricasMinadoService {
         }
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new JsonMapper();
             ArrayNode root = (ArrayNode) mapper.readTree(body);
             List<MetricasMinado> res = new ArrayList<>();
             Double precioBitcoinEur = obtenerPrecioBitcoinEur();
 
             for (JsonNode item : root) {
                 Integer coinId = item.path("id").isNumber() ? item.path("id").asInt() : null;
-                String nombreMoneda = item.path("name").asText(null);
-                String algoritmo = item.path("algorithm").asText(null);
+                String nombreMoneda = item.path("name").asString(null);
+                String algoritmo = item.path("algorithm").asString(null);
                 long nethash = item.path("nethash").asLong(0L);
-                Double blockTime = Double.valueOf(item.path("block_time").asText(null));
+                Double blockTime = Double.valueOf(item.path("block_time").asString(null));
                 Double blockReward = item.path("block_reward24").asDouble(item.path("block_reward").asDouble(0.0));
                 Double precioExchangeBtc = obtenerPrecioExchangeEnBtc(item.path("exchanges"));
                 Double precioActualEur = obtenerPrecioActualEurPorMoneda(nombreMoneda, precioExchangeBtc, precioBitcoinEur);

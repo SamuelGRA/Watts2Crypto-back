@@ -1,6 +1,5 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -8,16 +7,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.watts2crypto.watts2crypto_backend.models.MonedaTradicional;
 import com.watts2crypto.watts2crypto_backend.models.SimbolosISOMonedas;
 import com.watts2crypto.watts2crypto_backend.repositories.MonedaTradicionalRepository;
@@ -73,7 +72,7 @@ public class MonedaTradicionalService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en la llamada a Frankfurter");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         try {
             List<MonedaTradicional> res = new ArrayList<>();
             JsonNode root = mapper.readTree(body);
@@ -85,9 +84,9 @@ public class MonedaTradicionalService {
             }
 
             root.forEach(item -> {
-                String monedaObjetivo = item.get("quote").asText();
+                String monedaObjetivo = item.get("quote").asString();
                 Double tasaCambio = item.get("rate").asDouble();
-                LocalDate fecha = LocalDate.parse(item.get("date").asText());
+                LocalDate fecha = LocalDate.parse(item.get("date").asString());
 
                 MonedaTradicional moneda = new MonedaTradicional();
                 moneda.setMonedaBase(BASE_INTERNA);
@@ -99,7 +98,7 @@ public class MonedaTradicionalService {
             });
 
             return res;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Error parseando monedas de Frankfurter", e);
         }
     }
@@ -125,7 +124,7 @@ public class MonedaTradicionalService {
                         "Error en la llamada a Frankfurter");
             }
 
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new JsonMapper();
             JsonNode root = mapper.readTree(body);
 
             // Si la respuesta es un array, tomar el último elemento (más reciente)
@@ -136,10 +135,10 @@ public class MonedaTradicionalService {
             }
             JsonNode item = root.get(0);
 
-            String baseRespuesta = item.get("base").asText();
-            String quoteRespuesta = item.get("quote").asText();
+            String baseRespuesta = item.get("base").asString();
+            String quoteRespuesta = item.get("quote").asString();
             Double tasaCambio = item.get("rate").asDouble();
-            LocalDate fechaRespuesta = LocalDate.parse(item.get("date").asText());
+            LocalDate fechaRespuesta = LocalDate.parse(item.get("date").asString());
 
             MonedaTradicional moneda = new MonedaTradicional();
             moneda.setMonedaBase(baseRespuesta);
@@ -185,7 +184,7 @@ public class MonedaTradicionalService {
                         "Error en la llamada historica a Frankfurter");
             }
 
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new JsonMapper();
             JsonNode root = mapper.readTree(body);
 
             if (!root.isArray() || root.isEmpty()) {
@@ -196,10 +195,10 @@ public class MonedaTradicionalService {
             List<MonedaTradicional> res = new ArrayList<>();
             root.forEach(item -> {
                 MonedaTradicional moneda = new MonedaTradicional();
-                moneda.setMonedaBase(item.get("base").asText());
-                moneda.setMonedaObjetivo(item.get("quote").asText());
+                moneda.setMonedaBase(item.get("base").asString());
+                moneda.setMonedaObjetivo(item.get("quote").asString());
                 moneda.setTasaCambio(item.get("rate").asDouble());
-                moneda.setFecha(LocalDate.parse(item.get("date").asText()));
+                moneda.setFecha(LocalDate.parse(item.get("date").asString()));
                 res.add(moneda);
             });
 
@@ -357,18 +356,18 @@ public class MonedaTradicionalService {
                     "Error en la llamada a Frankfurter");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         try {
             JsonNode root = mapper.readTree(body);
 
             Set<String> symbols = new LinkedHashSet<>();
             if (root.isObject()) {
-                root.fieldNames().forEachRemaining(symbols::add);
+                root.propertyNames().iterator().forEachRemaining(symbols::add);
             } else if (root.isArray()) {
                 for (JsonNode item : root) {
                     JsonNode iso = item.get("iso_code");
-                    if (iso != null && !iso.asText().isBlank()) {
-                        symbols.add(iso.asText());
+                    if (iso != null && !iso.asString().isBlank()) {
+                        symbols.add(iso.asString());
                     }
                 }
             }
@@ -379,7 +378,7 @@ public class MonedaTradicionalService {
             }
 
             return new ArrayList<>(symbols);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Error parseando simbolos de Frankfurter", e);
         }
     }

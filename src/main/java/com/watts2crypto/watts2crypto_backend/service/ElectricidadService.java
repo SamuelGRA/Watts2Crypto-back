@@ -1,6 +1,5 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,9 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.watts2crypto.watts2crypto_backend.models.Electricidad;
 import com.watts2crypto.watts2crypto_backend.repositories.ElectricidadRepository;
 
@@ -185,7 +184,7 @@ public class ElectricidadService {
 
 	private List<Electricidad> parsearElectricidadDeEnergyCharts(String body, String zona) {
 		try {
-			ObjectMapper mapper = new ObjectMapper();
+			ObjectMapper mapper = new JsonMapper();
 			JsonNode root = mapper.readTree(body);
 
 			List<Long> timestamps = extraerListaTimestamps(root);
@@ -226,7 +225,7 @@ public class ElectricidadService {
 					.filter(electricidad -> electricidad != null)
 					.sorted(Comparator.comparing(Electricidad::getFecha))
 					.toList();
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			throw new IllegalStateException("Error parseando JSON de Energy-Charts", e);
 		}
 	}
@@ -317,7 +316,7 @@ public class ElectricidadService {
 	public Double findPriceByExactDateAndZone(String zone, LocalDateTime date) {
 		try {
 			Optional<Double> res = repository.findPriceBydateAndZone(zone, date);
-			if(!res.isPresent()) {
+			if(res.isEmpty()) {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Precio no encontrado para la zona y fecha indicadas");
 			}
 			return res.get();
@@ -331,7 +330,7 @@ public class ElectricidadService {
 	public Electricidad findLatestPriceInZone(String zone) {
 		try {
 			Optional<Electricidad> res = repository.findFirstByZonaOrderByFechaDesc(zone);
-			if(!res.isPresent()) {
+			if(res.isEmpty()) {
 				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hy datos de precios para la zona indicada");
 			}
 			return res.get();

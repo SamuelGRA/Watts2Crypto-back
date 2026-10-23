@@ -115,7 +115,7 @@ public class PoolService {
     public Pool findByName(String nombre) {
         try {
             Optional<Pool> res = repository.findByName(nombre);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pool " + nombre + " no encontrado");
             }
             return res.get();

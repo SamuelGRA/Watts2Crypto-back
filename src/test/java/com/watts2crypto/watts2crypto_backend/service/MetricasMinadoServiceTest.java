@@ -2,7 +2,6 @@ package com.watts2crypto.watts2crypto_backend.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
@@ -72,7 +71,6 @@ class MetricasMinadoServiceTest {
                 when(criptomonedaRepository.findByNameIgnoreCase("Dogecoin")).thenReturn(Optional.of(dogecoin));
                 when(criptomonedaRepository.findLatestPriceByAssetId("dogecoin"))
                                 .thenReturn(Optional.of(BigDecimal.valueOf(123.45)));
-                doNothing().when(repository).deleteAll();
 
                 localService.refreshMetricasMinado();
 

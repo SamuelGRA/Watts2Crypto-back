@@ -26,10 +26,12 @@ import java.nio.file.Path;
 
 import javax.sql.DataSource;
 
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@DependsOnDatabaseInitialization
 @Service
 public class SnapshotService {
 	private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
@@ -71,7 +73,7 @@ public class SnapshotService {
 	public void importSnapshot(MultipartFile snapshotFile) throws IOException, SQLException {
 		Path tempFile = Files.createTempFile("watts2crypto-snapshot-", ".sql");
 		try {
-			Files.writeString(tempFile, new String(snapshotFile.getBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+			Files.writeString(tempFile, new String(snapshotFile.getBytes(), StandardCharsets.UTF_8));
 			try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
 				String scriptPath = tempFile.toAbsolutePath().toString().replace("\\", "/");
 				statement.execute("RUNSCRIPT FROM '" + scriptPath.replace("'", "''") + "'");

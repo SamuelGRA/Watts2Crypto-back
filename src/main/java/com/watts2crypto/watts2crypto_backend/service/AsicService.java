@@ -1,6 +1,5 @@
 package com.watts2crypto.watts2crypto_backend.service;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,10 +16,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 import com.watts2crypto.watts2crypto_backend.models.Asic;
 import com.watts2crypto.watts2crypto_backend.models.RendimientoAlgoritmo;
 import com.watts2crypto.watts2crypto_backend.repositories.AsicRepository;
@@ -64,15 +64,15 @@ public class AsicService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en la llamada a WhatToMine");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         try {
             List<Asic> res = new ArrayList<>();
             Map<String, LocalDate> nombreYFecha = new HashMap<>();
             ArrayNode root = (ArrayNode) mapper.readTree(body); // la API devuelve un array
 
             for (JsonNode asicNode : root) {
-                String name = asicNode.get("name").asText();
-                LocalDate releaseDate = LocalDate.parse(asicNode.get("release_date").asText());
+                String name = asicNode.get("name").asString();
+                LocalDate releaseDate = LocalDate.parse(asicNode.get("release_date").asString());
 
                 // Si hay un asic repetido en la respuesta de la API, cuya entrada es más
                 // antigua que el asic que ya se tiene, no se actualiza
@@ -94,9 +94,9 @@ public class AsicService {
                 Integer contadorHashrate = 0;
 
                 for (JsonNode algoNode : algosNode) {
-                    String algoName = algoNode.get("name").asText();
+                    String algoName = algoNode.get("name").asString();
 
-                    Double hashrate = Double.parseDouble(algoNode.get("hashrate").asText());
+                    Double hashrate = Double.parseDouble(algoNode.get("hashrate").asString());
                     Integer power = algoNode.get("power").asInt();
 
                     RendimientoAlgoritmo rendimiento = new RendimientoAlgoritmo();
@@ -117,7 +117,7 @@ public class AsicService {
                 res.add(asic);
             }
             return res;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Error parseando ASICs de WhatToMine", e);
         }
 
@@ -136,7 +136,7 @@ public class AsicService {
     public Asic findAsicByName(String nombre) {
         try {
             Optional<Asic> res = repository.findByNameIgnoreCase(nombre);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se encontró ningún ASIC con ese nombre.");
             }
@@ -151,7 +151,7 @@ public class AsicService {
     public List<String> findAllAsicNames() {
         try {
             Optional<List<String>> res = repository.findAllNames();
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se pudieron obtener los nombres de los ASICs.");
             }
@@ -166,7 +166,7 @@ public class AsicService {
     public RendimientoAlgoritmo findHashrateYConsumoPorNombreYAlgoritmo(String nombre, String algoritmo) {
         try {
             Optional<RendimientoAlgoritmo> res = repository.findHashrateAndPowerByAsicAndAlgorithm(nombre, algoritmo);
-            if (!res.isPresent()) {
+            if (res.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se encontraron resultados con esos parámetros.");
             }

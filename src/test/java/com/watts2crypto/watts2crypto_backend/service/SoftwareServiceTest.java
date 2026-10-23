@@ -2,7 +2,6 @@ package com.watts2crypto.watts2crypto_backend.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -142,7 +141,6 @@ class SoftwareServiceTest {
         Software software = new Software("NoSlugMiner", Set.of(HardwareUsable.GPU), Set.of(SistemaOperativo.WINDOWS),
                 null);
         when(repository.findAll()).thenReturn(List.of(software));
-        doNothing().when(softwareAlgoritmoMonedaRepository).deleteAll();
 
         service.refreshSoftware();
 
@@ -158,7 +156,6 @@ class SoftwareServiceTest {
         ReflectionTestUtils.setField(software, "id", 21L);
         when(repository.findAll()).thenReturn(List.of(software));
         when(softwareAlgoritmoMonedaRepository.findBySoftwareIdAndMoneda(21L, "BTC")).thenReturn(Optional.empty());
-        doNothing().when(softwareAlgoritmoMonedaRepository).deleteAll();
 
         Document document = Jsoup.parse("<html><body><div class='w3-row estimate'>"
                 + "<span class='brand'>BTC</span>"
@@ -185,7 +182,6 @@ class SoftwareServiceTest {
 
     @Test
     void refreshSoftwareWrapsUnexpectedErrorsAsInternalServerError() {
-        doNothing().when(softwareAlgoritmoMonedaRepository).deleteAll();
         when(repository.findAll()).thenThrow(new RuntimeException("boom"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, service::refreshSoftware);
